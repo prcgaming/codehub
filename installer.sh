@@ -202,20 +202,24 @@ print_subheader() {
 }
 
 print_header() {
-  echo -e "${GREEN}"
+  echo -e "${YELLOW}"
   cat << "EOF"
-          .--.
-         |o_o |
-         |:_/ |
-        //   \ \
-       (|     | )
-      /'\_   _/`\
-      \___)=(___/
+              ..:::::..
+          .:::::::::::::::.
+       .:::::::::::::::::::::.
+      ::::::   :::::::   ::::::
+     :::::: () ::::::: () ::::::
+      ::::::   :::::::   ::::::
+       ':::::::::::::::::::::'
+          ':::::::::::::::'
+              '':::::''
 EOF
   echo -e "${NC}"
-  echo -e "${BOLD}${CYAN}╔═══════════════════════════════════╗${NC}"
-  echo -e "${BOLD}${CYAN}║${NC}      ${BOLD}${BLUE}PRC GAMING CODE HUB${NC}          ${BOLD}${CYAN}║${NC}"
-  echo -e "${BOLD}${CYAN}╚═══════════════════════════════════╝${NC}\n"
+  echo -e "${BOLD}${MAGENTA}╔═════════════════════════════════════════╗${NC}"
+  echo -e "${BOLD}${MAGENTA}║${NC}                                           ${BOLD}${MAGENTA}║${NC}"
+  echo -e "${BOLD}${MAGENTA}║${NC}   ${BOLD}${CYAN}P R C   G A M I N G   C O D E   H U B${NC}   ${BOLD}${MAGENTA}║${NC}"
+  echo -e "${BOLD}${MAGENTA}║${NC}                                           ${BOLD}${MAGENTA}║${NC}"
+  echo -e "${BOLD}${MAGENTA}╚═════════════════════════════════════════╝${NC}\n"
 }
 
 # ── Main menu ─────────────────────────────────────────────────
