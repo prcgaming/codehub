@@ -1,38 +1,42 @@
 #!/bin/bash
 #
-# Interactive multi-tool installer menu
-# Usage: bash <(curl -s https://your-domain.com/installer.sh)
+# PRC GAMING CODE HUB — interactive multi-tool installer menu
+# Usage: bash <(curl -s https://raw.githubusercontent.com/prcgaming/codehub/refs/heads/main/installer.sh)
 #
-# To add a new "panel" (menu option), just add a new entry to the
-# PANELS array below in the format:
+# To add a new simple apt-based tool, add a line to PANELS below:
 #   "Display Name|apt-package-name|command-to-check-if-installed"
+#
+# To add a new script-based panel (like Pterodactyl / JTG), add a line
+# to SPECIAL_PANELS:
+#   "Display Name|install-script-url|candidate-path-1,candidate-path-2,...|service-name"
+# (candidate paths / service name are used only for best-effort status detection)
 #
 
 set -uo pipefail
 
-# ── Color helpers ─────────────────────────────────────────────
+# ── Colors ────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+BLUE='\033[0;34m'
 BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
-# ── Panels config (add more tools here) ──────────────────────
-# Format: "Display Name|package-name|check-command"
+# ── Simple apt-based panels ───────────────────────────────────
 PANELS=(
   "fastfetch|fastfetch|fastfetch"
   "neofetch|neofetch|neofetch"
 )
 
-# ── Special panels (custom submenus, not simple apt packages) ─
-# Format: "Display Name|handler-function-name"
+# ── Script-based panels (custom installers) ──────────────────
+# Format: "Display Name|script-url|comma,separated,candidate,paths|service-name"
 SPECIAL_PANELS=(
-  "Pterodactyl|pterodactyl_menu"
+  "Pterodactyl|https://pterodactyl-installer.se|/var/www/pterodactyl,/etc/pterodactyl|pteroq"
+  "JTG Panel|https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh|/var/www/jtg,/opt/jtg|jtg"
 )
-
-# URL for the Pterodactyl default install script — change as needed
-PTERODACTYL_SCRIPT_URL="https://pterodactyl-installer.se"
 
 # ── Helpers ───────────────────────────────────────────────────
 pause() {
@@ -49,21 +53,25 @@ need_root() {
 }
 
 is_installed() {
-  local check_cmd="$1"
-  command -v "$check_cmd" &>/dev/null
+  command -v "$1" &>/dev/null
 }
 
+hr() {
+  echo -e "${DIM}─────────────────────────────────────${NC}"
+}
+
+# ── Status for simple apt tools ──────────────────────────────
 show_status() {
   local name="$1" check_cmd="$2"
   echo -e "\n${BOLD}== $name status ==${NC}"
   if is_installed "$check_cmd"; then
-    echo -e "${GREEN}Installed${NC}"
+    echo -e "${GREEN}● Installed${NC}"
     echo -e "Path: $(command -v "$check_cmd")"
     if "$check_cmd" --version &>/dev/null; then
       echo -e "Version: $("$check_cmd" --version | head -n1)"
     fi
   else
-    echo -e "${RED}Not installed${NC}"
+    echo -e "${RED}● Not installed${NC}"
   fi
 }
 
@@ -91,18 +99,18 @@ reinstall_pkg() {
   echo -e "${GREEN}Done.${NC}"
 }
 
-# ── Submenu for a single panel ───────────────────────────────
+# ── Submenu for a simple apt-based panel ─────────────────────
 panel_menu() {
   local name="$1" pkg="$2" check_cmd="$3"
   while true; do
     clear
-    echo -e "${BOLD}${CYAN}=== $name ===${NC}\n"
+    print_subheader "$name"
     echo "1) Status"
     echo "2) Install"
     echo "3) Reinstall"
     echo "4) Uninstall"
     echo "0) Back to main menu"
-    echo
+    hr
     read -rp "Select an option: " choice
     case "$choice" in
       1) show_status "$name" "$check_cmd"; pause ;;
@@ -115,20 +123,68 @@ panel_menu() {
   done
 }
 
-# ── Pterodactyl special panel ─────────────────────────────────
-pterodactyl_menu() {
+# ── Best-effort status check for script-based panels ─────────
+# We can't know exactly how a third-party script installs things,
+# so this checks a list of common install paths and an optional
+# systemd service name. It's a best-effort detector, not a guarantee.
+script_panel_status() {
+  local name="$1" paths_csv="$2" service="$3"
+  echo -e "\n${BOLD}== $name status (best-effort) ==${NC}"
+  local found=0
+  IFS=',' read -ra paths <<< "$paths_csv"
+  for p in "${paths[@]}"; do
+    if [[ -e "$p" ]]; then
+      echo -e "${GREEN}● Found:${NC} $p"
+      found=1
+    fi
+  done
+  if [[ -n "$service" ]] && command -v systemctl &>/dev/null; then
+    if systemctl list-unit-files 2>/dev/null | grep -q "^${service}\."; then
+      local state
+      state=$(systemctl is-active "$service" 2>/dev/null || echo "unknown")
+      echo -e "${GREEN}● Service '$service' found${NC} — state: $state"
+      found=1
+    fi
+  fi
+  if [[ "$found" -eq 0 ]]; then
+    echo -e "${RED}● Not detected${NC} ${DIM}(no known install paths or service found — it may still be installed in a custom location)${NC}"
+  fi
+}
+
+# ── Submenu for a script-based panel (Pterodactyl, JTG, etc.) ─
+script_panel_menu() {
+  local name="$1" url="$2" paths_csv="$3" service="$4"
   while true; do
     clear
-    echo -e "${BOLD}${CYAN}=== Pterodactyl ===${NC}\n"
-    echo "1) Install (default script)"
+    print_subheader "$name"
+    echo "1) Status"
+    echo "2) Install (default script)"
+    echo "3) Reinstall (re-run default script)"
+    echo "4) Uninstall info"
     echo "0) Back to main menu"
-    echo
+    hr
     read -rp "Select an option: " choice
     case "$choice" in
       1)
-        echo -e "\n${CYAN}Running default Pterodactyl install script...${NC}"
-        echo -e "${YELLOW}Source: $PTERODACTYL_SCRIPT_URL${NC}\n"
-        bash <(curl -s "$PTERODACTYL_SCRIPT_URL")
+        script_panel_status "$name" "$paths_csv" "$service"
+        pause
+        ;;
+      2)
+        echo -e "\n${CYAN}Running $name default install script...${NC}"
+        echo -e "${YELLOW}Source: $url${NC}\n"
+        bash <(curl -s "$url")
+        pause
+        ;;
+      3)
+        echo -e "\n${CYAN}Re-running $name install script (acts as reinstall/update for most installers)...${NC}"
+        echo -e "${YELLOW}Source: $url${NC}\n"
+        bash <(curl -s "$url")
+        pause
+        ;;
+      4)
+        echo -e "\n${YELLOW}$name does not have a single standard uninstall command.${NC}"
+        echo "Check the project's official docs/repo for uninstall steps, as it"
+        echo "usually involves removing web files, a database, and services."
         pause
         ;;
       0) return ;;
@@ -137,22 +193,29 @@ pterodactyl_menu() {
   done
 }
 
-# ── Header ────────────────────────────────────────────────────
+# ── Headers ───────────────────────────────────────────────────
+print_subheader() {
+  local title="$1"
+  echo -e "${BOLD}${MAGENTA}╭──────────────────────────────╮${NC}"
+  printf "${BOLD}${MAGENTA}│${NC} ${BOLD}%-30s${NC} ${BOLD}${MAGENTA}│${NC}\n" "$title"
+  echo -e "${BOLD}${MAGENTA}╰──────────────────────────────╯${NC}\n"
+}
+
 print_header() {
   echo -e "${GREEN}"
   cat << "EOF"
-        .--.
-       |o_o |
-       |:_/ |
-      //   \ \
-     (|     | )
-    /'\_   _/`\
-    \___)=(___/
+          .--.
+         |o_o |
+         |:_/ |
+        //   \ \
+       (|     | )
+      /'\_   _/`\
+      \___)=(___/
 EOF
   echo -e "${NC}"
-  echo -e "${BOLD}${CYAN}=============================${NC}"
-  echo -e "${BOLD}${CYAN}   PRC GAMING CODE HUB${NC}"
-  echo -e "${BOLD}${CYAN}=============================${NC}\n"
+  echo -e "${BOLD}${CYAN}╔═══════════════════════════════════╗${NC}"
+  echo -e "${BOLD}${CYAN}║${NC}      ${BOLD}${BLUE}PRC GAMING CODE HUB${NC}          ${BOLD}${CYAN}║${NC}"
+  echo -e "${BOLD}${CYAN}╚═══════════════════════════════════╝${NC}\n"
 }
 
 # ── Main menu ─────────────────────────────────────────────────
@@ -165,26 +228,26 @@ main_menu() {
     for panel in "${PANELS[@]}"; do
       IFS='|' read -r name pkg check_cmd <<< "$panel"
       if is_installed "$check_cmd"; then
-        echo -e "$i) $name ${GREEN}[installed]${NC}"
+        echo -e "  ${BOLD}$i)${NC} $name ${GREEN}[installed]${NC}"
       else
-        echo -e "$i) $name ${RED}[not installed]${NC}"
+        echo -e "  ${BOLD}$i)${NC} $name ${RED}[not installed]${NC}"
       fi
       ((i++))
     done
 
     local special_start=$i
     for panel in "${SPECIAL_PANELS[@]}"; do
-      IFS='|' read -r name _ <<< "$panel"
-      echo -e "$i) $name"
+      IFS='|' read -r name _ _ _ <<< "$panel"
+      echo -e "  ${BOLD}$i)${NC} ${MAGENTA}$name${NC}"
       ((i++))
     done
 
-    echo "0) Exit"
-    echo
+    echo -e "  ${BOLD}0)${NC} Exit"
+    hr
     read -rp "Select an option: " sel
 
     if [[ "$sel" == "0" ]]; then
-      echo "Bye!"
+      echo -e "${CYAN}Bye!${NC}"
       exit 0
     fi
 
@@ -192,8 +255,8 @@ main_menu() {
       IFS='|' read -r name pkg check_cmd <<< "${PANELS[$((sel-1))]}"
       panel_menu "$name" "$pkg" "$check_cmd"
     elif [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= special_start && sel < i )); then
-      IFS='|' read -r name handler <<< "${SPECIAL_PANELS[$((sel-special_start))]}"
-      "$handler"
+      IFS='|' read -r name url paths_csv service <<< "${SPECIAL_PANELS[$((sel-special_start))]}"
+      script_panel_menu "$name" "$url" "$paths_csv" "$service"
     else
       echo -e "${RED}Invalid option${NC}"
       sleep 1
