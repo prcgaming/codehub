@@ -208,15 +208,17 @@ box_title() {
 
 # ── Header & Banner ───────────────────────────────────────────────────────────
 print_banner() {
-  echo -e "                             ${MAGENTA}⚡ ${BOLD}${WHITE}P R C   G A M I N G${NC} ${MAGENTA}⚡${NC}"
-  echo -e " ${ORANGE}      _       ${CYAN}██████╗  ██████╗ ██████╗ ███████╗   ██╗  ██╗ ██╗   ██╗ ██████╗  ${ORANGE}      _       ${NC}"
-  echo -e " ${ORANGE}  ---(●)      ${CYAN}██╔════╝ ██╔═══██╗██╔══██╗██╔════╝   ██║  ██║ ██║   ██║ ██╔══██╗ ${ORANGE}     (●)---   ${NC}"
-  echo -e " ${ORANGE} _/  ---  \\\\    ${CYAN}██║      ██║   ██║██║  ██║█████╗     ███████║ ██║   ██║ ██████╔╝ ${ORANGE}   /  ---  \\\\_ ${NC}"
-  echo -e " ${ORANGE}(●) |   |      ${CYAN}██║      ██║   ██║██║  ██║██╔══╝     ██╔══██║ ██║   ██║ ██╔══██╗ ${ORANGE}     |   | (●)${NC}"
-  echo -e " ${ORANGE} \\\\   --- _/    ${CYAN}╚██████╗ ╚██████╔╝██████╔╝███████╗   ██║  ██║ ╚██████╔╝ ██████╔╝ ${ORANGE}   \\\\_ ---   / ${NC}"
-  echo -e " ${ORANGE}   ---(●)      ${CYAN} ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝  ╚═╝  ╚═════╝  ╚═════╝  ${ORANGE}     (●)---   ${NC}"
-  echo -e "                                     ${MAGENTA}⚡ ${BOLD}${WHITE}C O D E   H U B${NC} ${MAGENTA}⚡${NC}"
-  echo ""
+  echo -e "${CYAN}"
+  cat << "EOF"
+  ██████╗ ██████╗  ██████╗     ██████╗  █████╗ ███╗   ███╗██╗███╗   ██╗ ██████╗ 
+  ██╔══██╗██╔══██╗██╔════╝    ██╔════╝ ██╔══██╗████╗ ████║██║████╗  ██║██╔════╝ 
+  ██████╔╝██████╔╝██║         ██║  ███╗███████║██╔████╔██║██║██╔██╗ ██║██║  ███╗
+  ██╔═══╝ ██╔══██╗██║         ██║   ██║██╔══██║██║╚██╔╝██║██║██║╚██╗██║██║   ██║
+  ██║     ██║  ██║╚██████╗    ╚██████╔╝██║  ██║██║ ╚═╝ ██║██║██║ ╚████║╚██████╔╝
+  ╚═╝     ╚═╝  ╚═╝ ╚═════╝     ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+EOF
+  echo -e "                   ${MAGENTA}█▀▀ █▀█ █▀▄ █▀▀   █ █ █ █ █▀▄${NC}"
+  echo -e "                   ${MAGENTA}█▄▄ █▄█ █▄▀ ██▄   █▀█ █▄█ █▄▀${NC}\n"
 
   # System Telemetry HUD Card
   local os_name ram_usage uptime_str server_ip
@@ -225,22 +227,25 @@ print_banner() {
   uptime_str=$(get_uptime_info)
   server_ip=$(get_ip_info)
 
-  echo -e "             ${BLUE}╭─${GRAY}──[ ${CYAN}${BOLD}SYSTEM TELEMETRY${NC}${GRAY} ]${BLUE}────────────────────────────────────────────╮${NC}"
-  printf "             ${BLUE}│${NC}  ${BOLD}OS:${NC} %-28s ${BLUE}│${NC} ${BOLD}Uptime:${NC} %-20s ${BLUE}│${NC}\n" "${os_name:0:28}" "${uptime_str:0:20}"
-  printf "             ${BLUE}│${NC}  ${BOLD}RAM:${NC} %-27s ${BLUE}│${NC} ${BOLD}IP:${NC} %-24s ${BLUE}│${NC}\n" "${ram_usage:0:27}" "${server_ip:0:24}"
-  echo -e "             ${BLUE}╰─────────────────────────────────────────────────────────────────╯${NC}"
+  echo -e "  ${BLUE}╭─${GRAY}──[ ${CYAN}${BOLD}SYSTEM TELEMETRY${NC}${GRAY} ]${BLUE}────────────────────────────────────────────╮${NC}"
+  printf "  ${BLUE}│${NC}  ${BOLD}OS:${NC} %-28s ${BLUE}│${NC} ${BOLD}Uptime:${NC} %-20s ${BLUE}│${NC}\n" "${os_name:0:28}" "${uptime_str:0:20}"
+  printf "  ${BLUE}│${NC}  ${BOLD}RAM:${NC} %-27s ${BLUE}│${NC} ${BOLD}IP:${NC} %-24s ${BLUE}│${NC}\n" "${ram_usage:0:27}" "${server_ip:0:24}"
+  echo -e "  ${BLUE}╰─────────────────────────────────────────────────────────────────╯${NC}"
 }
 
 splash_screen() {
   clear
-  echo -e "                             ${MAGENTA}⚡ ${BOLD}${WHITE}P R C   G A M I N G${NC} ${MAGENTA}⚡${NC}"
-  echo -e " ${ORANGE}      _       ${CYAN}██████╗  ██████╗ ██████╗ ███████╗   ██╗  ██╗ ██╗   ██╗ ██████╗  ${ORANGE}      _       ${NC}"
-  echo -e " ${ORANGE}  ---(●)      ${CYAN}██╔════╝ ██╔═══██╗██╔══██╗██╔════╝   ██║  ██║ ██║   ██║ ██╔══██╗ ${ORANGE}     (●)---   ${NC}"
-  echo -e " ${ORANGE} _/  ---  \\\\    ${CYAN}██║      ██║   ██║██║  ██║█████╗     ███████║ ██║   ██║ ██████╔╝ ${ORANGE}   /  ---  \\\\_ ${NC}"
-  echo -e " ${ORANGE}(●) |   |      ${CYAN}██║      ██║   ██║██║  ██║██╔══╝     ██╔══██║ ██║   ██║ ██╔══██╗ ${ORANGE}     |   | (●)${NC}"
-  echo -e " ${ORANGE} \\\\   --- _/    ${CYAN}╚██████╗ ╚██████╔╝██████╔╝███████╗   ██║  ██║ ╚██████╔╝ ██████╔╝ ${ORANGE}   \\\\_ ---   / ${NC}"
-  echo -e " ${ORANGE}   ---(●)      ${CYAN} ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝  ╚═╝  ╚═════╝  ╚═════╝  ${ORANGE}     (●)---   ${NC}"
-  echo -e "                                     ${MAGENTA}⚡ ${BOLD}${WHITE}C O D E   H U B${NC} ${MAGENTA}⚡${NC}\n"
+  echo -e "${CYAN}"
+  cat << "EOF"
+  ██████╗ ██████╗  ██████╗     ██████╗  █████╗ ███╗   ███╗██╗███╗   ██╗ ██████╗ 
+  ██╔══██╗██╔══██╗██╔════╝    ██╔════╝ ██╔══██╗████╗ ████║██║████╗  ██║██╔════╝ 
+  ██████╔╝██████╔╝██║         ██║  ███╗███████║██╔████╔██║██║██╔██╗ ██║██║  ███╗
+  ██╔═══╝ ██╔══██╗██║         ██║   ██║██╔══██║██║╚██╔╝██║██║██║╚██╗██║██║   ██║
+  ██║     ██║  ██║╚██████╗    ╚██████╔╝██║  ██║██║ ╚═╝ ██║██║██║ ╚████║╚██████╔╝
+  ╚═╝     ╚═╝  ╚═╝ ╚═════╝     ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+EOF
+  echo -e "                   ${MAGENTA}█▀▀ █▀█ █▀▄ █▀▀   █ █ █ █ █▀▄${NC}"
+  echo -e "                   ${MAGENTA}█▄▄ █▄█ █▄▀ ██▄   █▀█ █▄█ █▄▀${NC}\n"
 
   progress_loader "Bootstrapping PRC Gaming Code Hub System..." 24 0.025
   spinner_step "Querying host kernel and hardware architecture..." 0.35
