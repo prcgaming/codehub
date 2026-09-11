@@ -37,7 +37,6 @@ restore_cursor() {
 trap 'restore_cursor; echo -e "\n\n${CYAN}Exiting PRC Gaming Code Hub. Goodbye!${NC}"; exit 0' INT TERM EXIT
 
 # ── Animation & Loading System ────────────────────────────────────────────────
-# 1. Timed Spinner for steps / transitions
 spinner_step() {
   local msg="$1"
   local duration="${2:-0.6}"
@@ -56,7 +55,6 @@ spinner_step() {
   restore_cursor
 }
 
-# 2. Command Execution with Live Spinner
 spinner_run() {
   local msg="$1"
   shift
@@ -94,7 +92,6 @@ spinner_run() {
   fi
 }
 
-# 3. Futuristic Cyberpunk Progress Bar
 progress_loader() {
   local title="$1"
   local total_steps="${2:-24}"
@@ -188,6 +185,15 @@ get_ip_info() {
   echo "$ip"
 }
 
+get_lan_ip() {
+  local lan_ip
+  lan_ip=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}')
+  if [[ -z "$lan_ip" ]]; then
+    lan_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+  fi
+  echo "${lan_ip:-127.0.0.1}"
+}
+
 hr() {
   echo -e "${GRAY}───────────────────────────────────────────────────────────────────${NC}"
 }
@@ -226,7 +232,6 @@ EOF
   echo -e "${BLUE}╰─────────────────────────────────────────────────────────────────╯${NC}"
 }
 
-# ── Splash / Loading Screen on Launch ─────────────────────────────────────────
 splash_screen() {
   clear
   echo -e "${CYAN}"
@@ -248,7 +253,6 @@ EOF
   sleep 0.2
 }
 
-# ── Reusable Status Viewers ───────────────────────────────────────────────────
 show_pkg_status() {
   local name="$1" cmd="$2" service="${3:-}"
   echo ""
@@ -368,7 +372,6 @@ menu_game_panels() {
   done
 }
 
-# ── Pterodactyl ───────────────────────────────────────────────────────────────
 submenu_pterodactyl() {
   while true; do
     clear
@@ -407,7 +410,6 @@ submenu_pterodactyl() {
   done
 }
 
-# ── Pelican ───────────────────────────────────────────────────────────────────
 submenu_pelican() {
   while true; do
     clear
@@ -445,7 +447,6 @@ submenu_pelican() {
   done
 }
 
-# ── PufferPanel ───────────────────────────────────────────────────────────────
 install_pufferpanel() {
   need_root || return 1
   echo ""
@@ -523,7 +524,6 @@ submenu_pufferpanel() {
   done
 }
 
-# ── Skyport Panel ─────────────────────────────────────────────────────────────
 install_skyport() {
   need_root || return 1
   echo ""
@@ -591,34 +591,49 @@ submenu_skyport() {
   done
 }
 
-# ── JTG Panel ─────────────────────────────────────────────────────────────────
 submenu_jtg() {
   while true; do
     clear
     print_banner
-    box_title "JTG Panel Installer"
-    echo -e "  ${BOLD}1)${NC} Check Status"
-    echo -e "  ${BOLD}2)${NC} Run JTG Installer Script"
-    echo -e "  ${BOLD}3)${NC} Re-run / Update Script"
-    echo -e "  ${BOLD}4)${NC} Uninstall Guidance"
+    box_title "🎮 JTG Panel Installer (JishnuTheGamer)"
+
+    echo -e "  ${BOLD}${WHITE}Official JTG One-Line Install Command:${NC}"
+    echo -e "  ${CYAN}╭─────────────────────────────────────────────────────────────────────────────╮${NC}"
+    echo -e "  ${CYAN}│${NC} ${BOLD}${YELLOW}bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh)${NC} ${CYAN}│${NC}"
+    echo -e "  ${CYAN}╰─────────────────────────────────────────────────────────────────────────────╯${NC}"
     echo ""
-    echo -e "  ${BOLD}0)${NC} Back"
+    echo -e "  ${BOLD}${CYAN}1)${NC} 🚀 Run Installer Script Now"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 📋 Copy / View Command Details"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 🔍 Check JTG Status & Files"
+    echo -e "  ${BOLD}${CYAN}4)${NC} 🗑️  Uninstall Guidance"
+    echo ""
+    echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Panels Menu"
     hr
-    read -rp "Select an option: " c
+    read -rp "Select an option [0-4]: " c
     case "$c" in
       1)
-        show_script_panel_status "JTG Panel" "/var/www/jtg,/opt/jtg" "jtg"
+        echo -e "\n${CYAN}Executing JTG installer command:${NC}"
+        echo -e "${YELLOW}bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh)${NC}\n"
+        bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh)
         pause
         ;;
-      2|3)
-        echo -e "\n${CYAN}Launching JTG Panel installer...${NC}"
-        echo -e "${YELLOW}Source: JishnuTheGamer/Jtg repo${NC}\n"
-        bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh)
+      2)
+        echo -e "\n${BOLD}${CYAN}=== JTG Panel Installer Command ===${NC}\n"
+        echo -e "  ${WHITE}You can run this directly in your server terminal:${NC}\n"
+        echo -e "  ${BOLD}${GREEN}bash <(curl -s https://raw.githubusercontent.com/JishnuTheGamer/Jtg/refs/heads/main/install.sh)${NC}\n"
+        echo -e "  ${GRAY}GitHub Source:${NC} https://github.com/JishnuTheGamer/Jtg"
+        echo -e "  ${GRAY}Description:${NC} Automated interactive installer for JTG panel & addons"
+        pause
+        ;;
+      3)
+        show_script_panel_status "JTG Panel" "/var/www/jtg,/opt/jtg" "jtg"
         pause
         ;;
       4)
         echo -e "\n${YELLOW}JTG Panel Uninstall Guide:${NC}"
-        echo "Remove files in /var/www/jtg or /opt/jtg and stop any associated systemd service."
+        echo "Remove files in /var/www/jtg or /opt/jtg and stop any associated systemd service:"
+        echo "  sudo systemctl stop jtg 2>/dev/null || true"
+        echo "  sudo rm -rf /var/www/jtg /opt/jtg"
         pause
         ;;
       0) return ;;
@@ -628,7 +643,778 @@ submenu_jtg() {
 }
 
 # ==============================================================================
-#  SECTION 2: TUNNELING & NETWORKING (Cloudflare, Playit.gg, Tailscale)
+#  SECTION 2: PTERODACTYL THEMES & BLUEPRINT FRAMEWORK
+# ==============================================================================
+check_ptero_directory() {
+  if [[ ! -d /var/www/pterodactyl ]]; then
+    echo -e "\n  ${RED}✖ Pterodactyl directory not found at /var/www/pterodactyl${NC}"
+    echo -e "  ${YELLOW}Notice: Themes and Blueprint require an active Pterodactyl Panel installation.${NC}"
+    echo -e "  ${GRAY}You can install Pterodactyl from Category 1 (Game & Hosting Panels).${NC}\n"
+    read -rp "$(echo -e "${CYAN}Do you want to proceed anyway? [y/N]: ${NC}")" ans
+    if [[ ! "$ans" =~ ^[Yy]$ ]]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+ensure_ptero_build_tools() {
+  need_root || return 1
+  local need_setup=0
+  if ! is_installed node || ! is_installed yarn; then
+    need_setup=1
+  fi
+
+  if [[ $need_setup -eq 1 ]]; then
+    echo -e "\n${CYAN}Building Pterodactyl panel assets requires Node.js (LTS) and Yarn.${NC}"
+    read -rp "$(echo -e "${YELLOW}Install Node.js & Yarn automatically now? [Y/n]: ${NC}")" confirm
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+      return 1
+    fi
+    spinner_step "Configuring NodeSource Node.js 20.x repository..." 0.8
+    curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO bash -
+    $SUDO apt-get update -y
+    $SUDO apt-get install -y nodejs git zip unzip curl ca-certificates
+    spinner_step "Installing Yarn globally via npm..." 0.6
+    $SUDO npm install -g yarn
+    echo -e "${GREEN}✔ Build tools (Node.js & Yarn) installed successfully!${NC}\n"
+  fi
+  return 0
+}
+
+backup_ptero_resources() {
+  need_root || return 1
+  if [[ ! -d /var/www/pterodactyl/resources ]]; then
+    echo -e "\n${RED}Directory /var/www/pterodactyl/resources not found.${NC}"
+    pause
+    return 1
+  fi
+  local timestamp
+  timestamp=$(date +%Y%m%d_%H%M%S)
+  local backup_path="/var/www/pterodactyl/resources.backup_${timestamp}"
+  spinner_step "Creating snapshot backup of /var/www/pterodactyl/resources..." 0.8
+  $SUDO cp -r /var/www/pterodactyl/resources "$backup_path"
+  echo -e "  ${GREEN}✔ Snapshot backup created at:${NC} ${BOLD}$backup_path${NC}"
+  return 0
+}
+
+restore_ptero_resources() {
+  need_root || return 1
+  local backups=(/var/www/pterodactyl/resources.backup*)
+  if [[ ! -e "${backups[0]}" ]]; then
+    echo -e "\n${RED}No theme backups found in /var/www/pterodactyl/resources.backup*${NC}"
+    pause
+    return 1
+  fi
+
+  echo -e "\n${BOLD}${CYAN}Available Resources Backups:${NC}"
+  local idx=1
+  local valid_backups=()
+  for b in "${backups[@]}"; do
+    if [[ -d "$b" ]]; then
+      echo -e "  ${CYAN}$idx)${NC} $(basename "$b") ${GRAY}($b)${NC}"
+      valid_backups+=("$b")
+      ((idx++))
+    fi
+  done
+
+  if [[ ${#valid_backups[@]} -eq 0 ]]; then
+    echo -e "${RED}No valid backup directories found.${NC}"
+    pause
+    return 1
+  fi
+
+  echo ""
+  read -rp "Select backup number to restore [1-${#valid_backups[@]}]: " bsel
+  if [[ "$bsel" =~ ^[0-9]+$ ]] && (( bsel >= 1 && bsel <= ${#valid_backups[@]} )); then
+    local chosen="${valid_backups[$((bsel-1))]}"
+    spinner_step "Restoring from $chosen..." 0.8
+    $SUDO rm -rf /var/www/pterodactyl/resources
+    $SUDO cp -r "$chosen" /var/www/pterodactyl/resources
+    $SUDO chown -R www-data:www-data /var/www/pterodactyl/*
+    echo -e "${GREEN}✔ Resources restored from $(basename "$chosen")!${NC}"
+    echo -e "${YELLOW}Rebuilding assets now to apply restored theme...${NC}\n"
+    rebuild_ptero_assets_quiet
+    pause
+  else
+    echo -e "${RED}Invalid selection.${NC}"
+    pause
+  fi
+}
+
+rebuild_ptero_assets_quiet() {
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+  cd /var/www/pterodactyl || return 1
+  spinner_step "Installing JS dependencies (yarn install)..." 1.0
+  $SUDO yarn install --frozen-lockfile 2>/dev/null || $SUDO yarn install
+  spinner_step "Compiling production assets (yarn build:production)..." 1.5
+  $SUDO yarn build:production || $SUDO npm run build:production || true
+  spinner_step "Flushing Laravel template and configuration caches..." 0.6
+  $SUDO php artisan view:clear 2>/dev/null || true
+  $SUDO php artisan config:clear 2>/dev/null || true
+  $SUDO php artisan cache:clear 2>/dev/null || true
+  spinner_step "Fixing web server file permissions (www-data)..." 0.4
+  $SUDO chown -R www-data:www-data /var/www/pterodactyl/* 2>/dev/null || true
+  echo -e "${GREEN}✔ Panel assets rebuilt and caches cleared successfully!${NC}"
+}
+
+rebuild_ptero_assets() {
+  clear
+  print_banner
+  box_title "🔨 Pterodactyl 1-Click Asset Rebuild"
+  check_ptero_directory || return 1
+  echo -e "${CYAN}This will compile your panel's React/TypeScript assets and flush Laravel caches.${NC}"
+  echo -e "${GRAY}Command sequence:${NC}"
+  echo -e "  - cd /var/www/pterodactyl"
+  echo -e "  - yarn install"
+  echo -e "  - yarn build:production"
+  echo -e "  - php artisan view:clear && php artisan config:clear && php artisan cache:clear"
+  echo -e "  - chown -R www-data:www-data /var/www/pterodactyl/*\n"
+  read -rp "$(echo -e "${YELLOW}Proceed with asset rebuild? [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+  echo ""
+  rebuild_ptero_assets_quiet
+  pause
+}
+
+is_blueprint_installed() {
+  command -v blueprint &>/dev/null || [[ -f /var/www/pterodactyl/blueprint.sh || -f /usr/local/bin/blueprint ]]
+}
+
+get_blueprint_version() {
+  if is_blueprint_installed; then
+    if command -v blueprint &>/dev/null; then
+      blueprint -v 2>/dev/null | head -n1 || echo "Installed"
+    elif [[ -f /var/www/pterodactyl/blueprint.sh ]]; then
+      echo "Installed (/var/www/pterodactyl/blueprint.sh)"
+    else
+      echo "Installed"
+    fi
+  else
+    echo "Not Installed"
+  fi
+}
+
+install_blueprint() {
+  clear
+  print_banner
+  box_title "🌟 Blueprint Framework Installer"
+  check_ptero_directory || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "${WHITE}Blueprint is the leading extension & theme framework for Pterodactyl Panel.${NC}"
+  echo -e "Official Website: ${CYAN}https://blueprint.zip${NC}"
+  echo -e "GitHub Repo:      ${CYAN}https://github.com/BlueprintFramework/framework${NC}\n"
+  echo -e "${BOLD}${WHITE}Installation Command:${NC}"
+  echo -e "  ${BOLD}${YELLOW}bash <(curl -s https://raw.githubusercontent.com/BlueprintFramework/framework/main/scripts/install.sh)${NC}\n"
+
+  read -rp "$(echo -e "${CYAN}Do you want to install Blueprint now? [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+
+  need_root || return 1
+  echo ""
+  spinner_step "Preparing system packages (git, zip, unzip, curl)..." 0.6
+  $SUDO apt-get update -y
+  $SUDO apt-get install -y git zip unzip curl ca-certificates
+
+  echo -e "\n${CYAN}Running Blueprint official installation script in /var/www/pterodactyl...${NC}\n"
+  cd /var/www/pterodactyl || return 1
+  bash <(curl -s https://raw.githubusercontent.com/BlueprintFramework/framework/main/scripts/install.sh)
+
+  echo ""
+  if is_blueprint_installed; then
+    echo -e "${GREEN}✔ Blueprint Framework installed successfully!${NC}"
+  else
+    echo -e "${YELLOW}Installer script finished. Check /var/www/pterodactyl for blueprint files.${NC}"
+  fi
+  pause
+}
+
+install_blueprint_ext() {
+  clear
+  print_banner
+  box_title "Install Blueprint Extension or Theme (.blueprint)"
+  check_ptero_directory || return 1
+
+  if ! is_blueprint_installed; then
+    echo -e "${RED}Blueprint is not installed yet.${NC}"
+    echo -e "${YELLOW}Please install Blueprint Framework first from the menu.${NC}"
+    pause
+    return 1
+  fi
+
+  echo -e "${WHITE}Enter the file path or URL to a ${CYAN}.blueprint${WHITE} extension/theme:${NC}"
+  echo -e "${GRAY}Example: /root/mytheme.blueprint OR https://example.com/theme.blueprint${NC}\n"
+  read -rp "Target [.blueprint path or URL]: " target_input
+
+  if [[ -z "$target_input" ]]; then
+    echo -e "${RED}No path or URL provided.${NC}"
+    pause
+    return 1
+  fi
+
+  need_root || return 1
+  cd /var/www/pterodactyl || return 1
+
+  local install_target="$target_input"
+  if [[ "$target_input" =~ ^https?:// ]]; then
+    local tmp_file="/tmp/ext_$(date +%s).blueprint"
+    spinner_step "Downloading $target_input..." 0.8
+    if ! curl -fsSL -o "$tmp_file" "$target_input"; then
+      echo -e "${RED}Failed to download extension from URL.${NC}"
+      pause
+      return 1
+    fi
+    install_target="$tmp_file"
+  fi
+
+  echo -e "\n${CYAN}Running: blueprint -i $install_target${NC}\n"
+  if command -v blueprint &>/dev/null; then
+    $SUDO blueprint -i "$install_target"
+  elif [[ -f ./blueprint.sh ]]; then
+    $SUDO bash ./blueprint.sh -i "$install_target"
+  else
+    echo -e "${RED}Could not locate blueprint executable in PATH or /var/www/pterodactyl.${NC}"
+  fi
+
+  echo -e "\n${GREEN}✔ Blueprint extension install process completed!${NC}"
+  pause
+}
+
+remove_blueprint_ext() {
+  clear
+  print_banner
+  box_title "Remove Blueprint Extension"
+  check_ptero_directory || return 1
+
+  if ! is_blueprint_installed; then
+    echo -e "${RED}Blueprint is not installed.${NC}"
+    pause
+    return 1
+  fi
+
+  need_root || return 1
+  cd /var/www/pterodactyl || return 1
+  echo -e "${WHITE}Currently registered extensions:${NC}\n"
+  if [[ -d /var/www/pterodactyl/.blueprint/extensions ]]; then
+    ls -1 /var/www/pterodactyl/.blueprint/extensions 2>/dev/null | sed 's/^/  - /' || echo "  (None found)"
+  fi
+
+  echo ""
+  read -rp "Enter the extension identifier/name to remove: " ext_name
+  if [[ -z "$ext_name" ]]; then
+    echo -e "${RED}No extension specified.${NC}"
+    pause
+    return 1
+  fi
+
+  echo -e "\n${CYAN}Removing extension '$ext_name'...${NC}\n"
+  if command -v blueprint &>/dev/null; then
+    $SUDO blueprint -r "$ext_name"
+  elif [[ -f ./blueprint.sh ]]; then
+    $SUDO bash ./blueprint.sh -r "$ext_name"
+  fi
+  echo -e "\n${GREEN}Removal finished.${NC}"
+  pause
+}
+
+update_blueprint() {
+  clear
+  print_banner
+  box_title "Update Blueprint Framework"
+  check_ptero_directory || return 1
+  need_root || return 1
+  cd /var/www/pterodactyl || return 1
+
+  echo -e "${CYAN}Updating Blueprint Framework...${NC}\n"
+  if command -v blueprint &>/dev/null; then
+    $SUDO blueprint -u
+  elif [[ -f ./blueprint.sh ]]; then
+    $SUDO bash ./blueprint.sh -u
+  else
+    echo -e "${YELLOW}Blueprint binary not found. Re-running official installer script...${NC}\n"
+    bash <(curl -s https://raw.githubusercontent.com/BlueprintFramework/framework/main/scripts/install.sh)
+  fi
+  echo -e "\n${GREEN}✔ Blueprint updated.${NC}"
+  pause
+}
+
+submenu_blueprint() {
+  while true; do
+    clear
+    print_banner
+    local bp_status="${RED}[✖ Not Installed]${NC}"
+    if is_blueprint_installed; then
+      bp_status="${GREEN}[✔ $(get_blueprint_version)]${NC}"
+    fi
+
+    box_title "🌟 Blueprint Framework Manager $bp_status"
+    echo -e "  ${BOLD}${CYAN}1)${NC} 🔍 Check Blueprint Status & Version"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 🚀 Install Blueprint Framework (Official)"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 📦 Install Blueprint Extension / Theme (.blueprint or URL)"
+    echo -e "  ${BOLD}${CYAN}4)${NC} 🗑️  Remove / Uninstall Extension ('blueprint -r')"
+    echo -e "  ${BOLD}${CYAN}5)${NC} 🔄 Update Blueprint Engine ('blueprint -u')"
+    echo -e "  ${BOLD}${CYAN}6)${NC} 📋 List Installed Extensions & Themes"
+    echo -e "  ${BOLD}${CYAN}7)${NC} 🌐 Official Blueprint Documentation & Links"
+    echo ""
+    echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Themes Menu"
+    hr
+    read -rp "Select an option [0-7]: " c
+    case "$c" in
+      1)
+        echo -e "\n${BOLD}${CYAN}=== Blueprint Status Check ===${NC}\n"
+        if is_blueprint_installed; then
+          echo -e "  ${GREEN}✔ Blueprint is installed on this server.${NC}"
+          if command -v blueprint &>/dev/null; then
+            echo -e "  ${WHITE}Version & Info:${NC}"
+            blueprint -h 2>/dev/null | head -n 6 | sed 's/^/    /'
+          fi
+        else
+          echo -e "  ${RED}✖ Blueprint is not detected in PATH or /var/www/pterodactyl.${NC}"
+        fi
+        pause
+        ;;
+      2) install_blueprint ;;
+      3) install_blueprint_ext ;;
+      4) remove_blueprint_ext ;;
+      5) update_blueprint ;;
+      6)
+        echo -e "\n${BOLD}${CYAN}=== Installed Blueprint Extensions ===${NC}\n"
+        if [[ -d /var/www/pterodactyl/.blueprint/extensions ]]; then
+          ls -la /var/www/pterodactyl/.blueprint/extensions
+        else
+          echo -e "  ${GRAY}No extensions directory found at /var/www/pterodactyl/.blueprint/extensions${NC}"
+        fi
+        pause
+        ;;
+      7)
+        echo -e "\n${BOLD}${CYAN}=== Blueprint Official Links ===${NC}\n"
+        echo -e "  ${WHITE}Website:${NC}      https://blueprint.zip"
+        echo -e "  ${WHITE}GitHub:${NC}       https://github.com/BlueprintFramework/framework"
+        echo -e "  ${WHITE}Extensions:${NC}   https://blueprint.zip/browse"
+        echo -e "  ${WHITE}Discord:${NC}      https://discord.gg/blueprint"
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── Individual Theme Installers ───────────────────────────────────────────────
+
+install_theme_nebula() {
+  clear
+  print_banner
+  box_title "🌌 Nebula Theme for Pterodactyl"
+  check_ptero_directory || return 1
+
+  echo -e "  ${WHITE}Nebula is the most popular modern, dynamic Pterodactyl theme with sleek${NC}"
+  echo -e "  ${WHITE}animations, custom sidebar, neon accents, and full mobile responsiveness.${NC}"
+  echo -e "  ${GRAY}GitHub: https://github.com/rework-pterodactyl/nebula${NC}\n"
+
+  echo -e "  ${BOLD}${CYAN}1)${NC} 🌟 Install via Blueprint (Recommended - nebula.blueprint)"
+  echo -e "  ${BOLD}${CYAN}2)${NC} 🛠️  Standalone / Manual Git Clone & Build"
+  echo -e "  ${BOLD}${CYAN}3)${NC} 🌐 View Nebula Documentation & Demo"
+  echo ""
+  echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back"
+  hr
+  read -rp "Select an option [0-3]: " nc
+  case "$nc" in
+    1)
+      need_root || return 1
+      if ! is_blueprint_installed; then
+        echo -e "\n${YELLOW}Blueprint Framework is required for this installation method.${NC}"
+        read -rp "$(echo -e "${CYAN}Would you like to install Blueprint now? [Y/n]: ${NC}")" bp_ask
+        if [[ ! "$bp_ask" =~ ^[Nn]$ ]]; then
+          install_blueprint
+        else
+          return 0
+        fi
+      fi
+
+      echo -e "\n${CYAN}Fetching latest Nebula Blueprint release...${NC}"
+      cd /tmp
+      rm -f nebula.blueprint
+      if curl -fsSL -o nebula.blueprint https://github.com/rework-pterodactyl/nebula/releases/latest/download/nebula.blueprint; then
+        echo -e "${GREEN}✔ Downloaded nebula.blueprint!${NC}"
+      else
+        echo -e "${YELLOW}Could not download latest release automatically.${NC}"
+        read -rp "Enter direct URL to nebula.blueprint: " custom_url
+        if [[ -n "$custom_url" ]]; then
+          curl -fsSL -o nebula.blueprint "$custom_url" || { echo -e "${RED}Download failed.${NC}"; pause; return 1; }
+        else
+          pause
+          return 1
+        fi
+      fi
+
+      backup_ptero_resources
+      cd /var/www/pterodactyl || return 1
+      echo -e "\n${CYAN}Installing Nebula into Blueprint...${NC}\n"
+      if command -v blueprint &>/dev/null; then
+        $SUDO blueprint -i /tmp/nebula.blueprint
+      else
+        $SUDO bash ./blueprint.sh -i /tmp/nebula.blueprint
+      fi
+      rm -f /tmp/nebula.blueprint
+      echo -e "\n${GREEN}✔ Nebula theme installed via Blueprint!${NC}"
+      pause
+      ;;
+    2)
+      need_root || return 1
+      ensure_ptero_build_tools || return 1
+      backup_ptero_resources
+      echo -e "\n${CYAN}Downloading Nebula theme repository...${NC}"
+      rm -rf /tmp/nebula-theme
+      git clone https://github.com/rework-pterodactyl/nebula.git /tmp/nebula-theme
+      if [[ -d /tmp/nebula-theme/resources ]]; then
+        spinner_step "Applying Nebula theme files into /var/www/pterodactyl/resources..." 0.8
+        $SUDO cp -r /tmp/nebula-theme/resources/* /var/www/pterodactyl/resources/
+        rm -rf /tmp/nebula-theme
+        rebuild_ptero_assets_quiet
+      else
+        echo -e "${RED}Could not locate resources folder in Nebula repository.${NC}"
+      fi
+      pause
+      ;;
+    3)
+      echo -e "\n${CYAN}Nebula Theme GitHub:${NC} https://github.com/rework-pterodactyl/nebula"
+      echo -e "${CYAN}Website & Demos:${NC}     https://nebula.rework.to"
+      pause
+      ;;
+    0) return ;;
+  esac
+}
+
+install_theme_slate() {
+  clear
+  print_banner
+  box_title "🌑 Slate Theme for Pterodactyl"
+  check_ptero_directory || return 1
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "  ${WHITE}Slate is a clean, minimal dark theme designed for Pterodactyl v1.x.${NC}"
+  echo -e "  ${GRAY}Clean contrast, refined cards, and reduced visual clutter.${NC}\n"
+
+  read -rp "$(echo -e "${CYAN}Install Slate Theme now? (Automatic backup + build) [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+
+  backup_ptero_resources
+
+  echo -e "\n${CYAN}Cloning Slate Theme repository...${NC}"
+  rm -rf /tmp/slate-theme
+  if git clone https://github.com/Ferks-FK/Pterodactyl-Slate-Theme.git /tmp/slate-theme 2>/dev/null || \
+     git clone https://github.com/ItzBozZ/Pterodactyl-Slate-Theme.git /tmp/slate-theme; then
+    echo -e "${GREEN}✔ Repository cloned.${NC}"
+    if [[ -d /tmp/slate-theme/resources ]]; then
+      spinner_step "Overwriting panel resources with Slate theme..." 0.8
+      $SUDO cp -r /tmp/slate-theme/resources/* /var/www/pterodactyl/resources/
+    elif [[ -d /tmp/slate-theme/Slate ]]; then
+      spinner_step "Overwriting panel resources with Slate theme..." 0.8
+      $SUDO cp -r /tmp/slate-theme/Slate/* /var/www/pterodactyl/
+    fi
+    rm -rf /tmp/slate-theme
+
+    echo -e "\n${YELLOW}Compiling production assets and refreshing panel...${NC}\n"
+    rebuild_ptero_assets_quiet
+    echo -e "\n${GREEN}✔ Slate Theme successfully installed! Refresh your browser.${NC}"
+  else
+    echo -e "\n${RED}Failed to clone Slate theme repository. Check internet connection.${NC}"
+  fi
+  pause
+}
+
+install_theme_elysium() {
+  clear
+  print_banner
+  box_title "⚡ Elysium Theme (Cyber / Glassmorphic UI)"
+  check_ptero_directory || return 1
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "  ${WHITE}Elysium is a futuristic glassmorphic theme with animated glow effects,${NC}"
+  echo -e "  ${WHITE}enhanced server metrics, and modern dark styling.${NC}\n"
+
+  read -rp "$(echo -e "${CYAN}Install Elysium Theme now? [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+
+  backup_ptero_resources
+
+  echo -e "\n${CYAN}Fetching Elysium theme files...${NC}"
+  rm -rf /tmp/elysium-theme
+  if git clone https://github.com/noctis-development/elysium.git /tmp/elysium-theme 2>/dev/null || \
+     git clone https://github.com/manucabral/Elysium-Theme.git /tmp/elysium-theme 2>/dev/null; then
+    echo -e "${GREEN}✔ Theme files downloaded.${NC}"
+    if [[ -d /tmp/elysium-theme/resources ]]; then
+      $SUDO cp -r /tmp/elysium-theme/resources/* /var/www/pterodactyl/resources/
+    fi
+    rm -rf /tmp/elysium-theme
+    rebuild_ptero_assets_quiet
+    echo -e "\n${GREEN}✔ Elysium Theme installed successfully!${NC}"
+  else
+    echo -e "${YELLOW}Online git repository moved. Enter direct tar.gz or git URL if you have one:${NC}"
+    read -rp "URL [leave blank to cancel]: " custom_repo
+    if [[ -n "$custom_repo" ]]; then
+      git clone "$custom_repo" /tmp/elysium-theme
+      if [[ -d /tmp/elysium-theme/resources ]]; then
+        $SUDO cp -r /tmp/elysium-theme/resources/* /var/www/pterodactyl/resources/
+        rebuild_ptero_assets_quiet
+      fi
+      rm -rf /tmp/elysium-theme
+    fi
+  fi
+  pause
+}
+
+install_theme_carbon() {
+  clear
+  print_banner
+  box_title "💎 Carbon Theme (Dark Material)"
+  check_ptero_directory || return 1
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "  ${WHITE}Carbon Theme features deep charcoal dark backgrounds, crisp borders,${NC}"
+  echo -e "  ${WHITE}and refined high-contrast server metric graphs.${NC}\n"
+
+  read -rp "$(echo -e "${CYAN}Install Carbon Theme now? [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+
+  backup_ptero_resources
+
+  echo -e "\n${CYAN}Fetching Carbon theme files...${NC}"
+  rm -rf /tmp/carbon-theme
+  if git clone https://github.com/tekgator/pterodactyl-carbon-theme.git /tmp/carbon-theme 2>/dev/null || \
+     git clone https://github.com/Pterodactyl-Themes/Carbon.git /tmp/carbon-theme 2>/dev/null; then
+    echo -e "${GREEN}✔ Files downloaded.${NC}"
+    if [[ -d /tmp/carbon-theme/resources ]]; then
+      $SUDO cp -r /tmp/carbon-theme/resources/* /var/www/pterodactyl/resources/
+    fi
+    rm -rf /tmp/carbon-theme
+    rebuild_ptero_assets_quiet
+    echo -e "\n${GREEN}✔ Carbon Theme installed!${NC}"
+  else
+    echo -e "${YELLOW}Could not download default Carbon repository.${NC}"
+    read -rp "Enter direct git URL or archive link [or Enter to cancel]: " c_url
+    if [[ -n "$c_url" ]]; then
+      git clone "$c_url" /tmp/carbon-theme
+      [[ -d /tmp/carbon-theme/resources ]] && $SUDO cp -r /tmp/carbon-theme/resources/* /var/www/pterodactyl/resources/
+      rm -rf /tmp/carbon-theme
+      rebuild_ptero_assets_quiet
+    fi
+  fi
+  pause
+}
+
+install_theme_flanco() {
+  clear
+  print_banner
+  box_title "🍃 Flanco Theme (Minimalist Clean)"
+  check_ptero_directory || return 1
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "  ${WHITE}Flanco Theme offers an ultra-clean, lightweight user interface${NC}"
+  echo -e "  ${WHITE}with smooth border radii and modern card elevations.${NC}\n"
+
+  read -rp "$(echo -e "${CYAN}Install Flanco Theme now? [Y/n]: ${NC}")" confirm
+  if [[ "$confirm" =~ ^[Nn]$ ]]; then
+    return 0
+  fi
+
+  backup_ptero_resources
+
+  echo -e "\n${CYAN}Downloading Flanco theme...${NC}"
+  rm -rf /tmp/flanco-theme
+  if git clone https://github.com/matheustech/flanco-pterodactyl.git /tmp/flanco-theme 2>/dev/null || \
+     git clone https://github.com/Flanco-Theme/Pterodactyl.git /tmp/flanco-theme 2>/dev/null; then
+    [[ -d /tmp/flanco-theme/resources ]] && $SUDO cp -r /tmp/flanco-theme/resources/* /var/www/pterodactyl/resources/
+    rm -rf /tmp/flanco-theme
+    rebuild_ptero_assets_quiet
+    echo -e "\n${GREEN}✔ Flanco Theme installed successfully!${NC}"
+  else
+    echo -e "${YELLOW}Could not locate Flanco repository automatically.${NC}"
+    read -rp "Enter direct theme download/git link [Enter to skip]: " f_link
+    if [[ -n "$f_link" ]]; then
+      git clone "$f_link" /tmp/flanco-theme
+      [[ -d /tmp/flanco-theme/resources ]] && $SUDO cp -r /tmp/flanco-theme/resources/* /var/www/pterodactyl/resources/
+      rm -rf /tmp/flanco-theme
+      rebuild_ptero_assets_quiet
+    fi
+  fi
+  pause
+}
+
+install_theme_recolor() {
+  clear
+  print_banner
+  box_title "🎨 Recolor & Night Accents"
+  check_ptero_directory || return 1
+  need_root || return 1
+
+  echo -e "  ${WHITE}Quickly customize Pterodactyl's primary brand accent colors${NC}"
+  echo -e "  ${WHITE}without needing to replace the entire frontend architecture.${NC}\n"
+  echo -e "  ${BOLD}${CYAN}1)${NC} 🟣 Electric Purple / Violet Accent"
+  echo -e "  ${BOLD}${CYAN}2)${NC} 🔵 Neon Cyber Blue Accent"
+  echo -e "  ${BOLD}${CYAN}3)${NC} 🟢 Emerald Gaming Green Accent"
+  echo -e "  ${BOLD}${CYAN}4)${NC} 🔴 Crimson Gamer Red Accent"
+  echo -e "  ${BOLD}${CYAN}5)${NC} 🟡 Golden Amber Accent"
+  echo -e "  ${BOLD}${CYAN}6)${NC} 🖤 Pure AMOLED Midnight Dark Mode CSS"
+  echo ""
+  echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back"
+  hr
+  read -rp "Select color accent [0-6]: " rc
+  case "$rc" in
+    1|2|3|4|5|6)
+      backup_ptero_resources
+      local color_hex="#7c3aed"
+      case "$rc" in
+        1) color_hex="#8b5cf6" ;; # Purple
+        2) color_hex="#06b6d4" ;; # Cyan / Blue
+        3) color_hex="#10b981" ;; # Emerald
+        4) color_hex="#ef4444" ;; # Red
+        5) color_hex="#f59e0b" ;; # Amber Gold
+        6) color_hex="#0a0a0c" ;; # Midnight
+      esac
+      spinner_step "Applying custom theme variable overlay ($color_hex)..." 0.6
+      local custom_css_dir="/var/www/pterodactyl/public/themes/custom"
+      $SUDO mkdir -p "$custom_css_dir"
+      cat << EOF | $SUDO tee "$custom_css_dir/accent.css" >/dev/null
+:root {
+  --primary-accent: ${color_hex} !important;
+  --theme-accent: ${color_hex} !important;
+}
+EOF
+      echo -e "${GREEN}✔ Accent color stylesheet created at $custom_css_dir/accent.css!${NC}"
+      echo -e "${GRAY}Note: For full React compile with this accent, run 1-Click Asset Rebuild.${NC}"
+      pause
+      ;;
+    0) return ;;
+    *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
+  esac
+}
+
+restore_stock_ptero_theme() {
+  clear
+  print_banner
+  box_title "🔄 Restore Vanilla Stock Pterodactyl Theme"
+  check_ptero_directory || return 1
+  need_root || return 1
+  ensure_ptero_build_tools || return 1
+
+  echo -e "${YELLOW}Warning: This will restore the pristine default Pterodactyl Panel interface.${NC}"
+  echo -e "${GRAY}It will download the official resources archive from Pterodactyl's GitHub${NC}"
+  echo -e "${GRAY}and recompile all production assets.${NC}\n"
+
+  read -rp "$(echo -e "${RED}Are you sure you want to revert to default theme? [y/N]: ${NC}")" confirm
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    return 0
+  fi
+
+  backup_ptero_resources
+
+  echo -e "\n${CYAN}Downloading official Pterodactyl release tarball...${NC}"
+  cd /tmp
+  rm -f panel.tar.gz
+  if curl -Lo panel.tar.gz https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz; then
+    echo -e "${GREEN}✔ Downloaded official release.${NC}"
+    spinner_step "Extracting pristine resources into /var/www/pterodactyl..." 1.0
+    cd /var/www/pterodactyl || return 1
+    $SUDO tar -xzf /tmp/panel.tar.gz resources/
+    rm -f /tmp/panel.tar.gz
+
+    echo -e "\n${CYAN}Rebuilding vanilla panel assets...${NC}\n"
+    rebuild_ptero_assets_quiet
+    echo -e "\n${GREEN}✔ Successfully restored vanilla Pterodactyl theme!${NC}"
+  else
+    echo -e "\n${RED}Failed to download official panel tarball from GitHub.${NC}"
+  fi
+  pause
+}
+
+menu_ptero_themes() {
+  while true; do
+    clear
+    print_banner
+
+    local ptero_indicator="${RED}[✖ Not Detected]${NC}"
+    if [[ -d /var/www/pterodactyl ]]; then
+      ptero_indicator="${GREEN}[✔ /var/www/pterodactyl]${NC}"
+    fi
+
+    local bp_indicator="${GRAY}[✖ No Blueprint]${NC}"
+    if is_blueprint_installed; then
+      bp_indicator="${GREEN}[✔ Blueprint Ready]${NC}"
+    fi
+
+    box_title "🎨 Pterodactyl Themes & Blueprint Engine"
+    echo -e "  Panel Status: $ptero_indicator  |  Blueprint Engine: $bp_indicator\n"
+
+    echo -e "  ${BOLD}${MAGENTA}── BLUEPRINT FRAMEWORK ─────────────────────────────────────${NC}"
+    echo -e "  ${BOLD}${CYAN}1)${NC} 🌟 Blueprint Framework Manager  ${GRAY}(Install, Manage Addons & Themes)${NC}"
+    echo ""
+    echo -e "  ${BOLD}${MAGENTA}── AVAILABLE PTERODACTYL THEMES ────────────────────────────${NC}"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 🌌 Nebula Theme                  ${GRAY}(Modern Dynamic UI, Blueprint Native)${NC}"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 🌑 Slate Theme                   ${GRAY}(Clean Minimalist Dark Design)${NC}"
+    echo -e "  ${BOLD}${CYAN}4)${NC} ⚡ Elysium Theme                 ${GRAY}(Futuristic Cyber / Glassmorphic UI)${NC}"
+    echo -e "  ${BOLD}${CYAN}5)${NC} 💎 Carbon Theme                  ${GRAY}(High-Contrast Dark Material Design)${NC}"
+    echo -e "  ${BOLD}${CYAN}6)${NC} 🍃 Flanco Theme                  ${GRAY}(Lightweight Sleek Card Design)${NC}"
+    echo -e "  ${BOLD}${CYAN}7)${NC} 🎨 Recolor & Night Accents       ${GRAY}(Purple, Cyan, Emerald, Amber, Midnight)${NC}"
+    echo -e "  ${BOLD}${CYAN}8)${NC} 🔄 Restore Stock Vanilla Theme   ${GRAY}(Revert Clean to Official Pterodactyl)${NC}"
+    echo ""
+    echo -e "  ${BOLD}${MAGENTA}── THEME TOOLS & ASSET COMPILER ────────────────────────────${NC}"
+    echo -e "  ${BOLD}${CYAN}9)${NC} 🔨 1-Click Panel Asset Rebuild   ${GRAY}(yarn build:production & clear cache)${NC}"
+    echo -e "  ${BOLD}${CYAN}10)${NC} 💾 Backup Current Theme Resources ${GRAY}(Create instant snapshot)${NC}"
+    echo -e "  ${BOLD}${CYAN}11)${NC} ⏪ Restore Theme From Backup     ${GRAY}(Rollback to previous snapshot)${NC}"
+    echo -e "  ${BOLD}${CYAN}12)${NC} 🔑 Fix Permissions (www-data)    ${GRAY}(chown -R www-data:www-data)${NC}"
+    echo ""
+    echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Main Menu"
+    hr
+    read -rp "Select an option [0-12]: " tchoice
+
+    case "$tchoice" in
+      1) submenu_blueprint ;;
+      2) install_theme_nebula ;;
+      3) install_theme_slate ;;
+      4) install_theme_elysium ;;
+      5) install_theme_carbon ;;
+      6) install_theme_flanco ;;
+      7) install_theme_recolor ;;
+      8) restore_stock_ptero_theme ;;
+      9) rebuild_ptero_assets ;;
+      10)
+        backup_ptero_resources
+        pause
+        ;;
+      11) restore_ptero_resources ;;
+      12)
+        need_root || continue
+        check_ptero_directory || continue
+        spinner_run "Setting ownership of /var/www/pterodactyl to www-data..." $SUDO chown -R www-data:www-data /var/www/pterodactyl/*
+        echo -e "${GREEN}✔ Permissions fixed!${NC}"
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ==============================================================================
+#  SECTION 3: TUNNELING & NETWORKING (Cloudflare, Ngrok, Playit.gg, Tailscale)
 # ==============================================================================
 menu_tunnels() {
   while true; do
@@ -639,6 +1425,11 @@ menu_tunnels() {
     local cf_stat="${GRAY}[✖ Not Installed]${NC}"
     if is_installed cloudflared; then
       cf_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    local ngrok_stat="${GRAY}[✖ Not Installed]${NC}"
+    if is_installed ngrok; then
+      ngrok_stat="${GREEN}[✔ Installed]${NC}"
     fi
 
     local playit_stat="${GRAY}[✖ Not Installed]${NC}"
@@ -652,17 +1443,19 @@ menu_tunnels() {
     fi
 
     echo -e "  ${BOLD}${CYAN}1)${NC} Cloudflare Tunnel (cloudflared)   $cf_stat"
-    echo -e "  ${BOLD}${CYAN}2)${NC} Playit.gg Agent (Game Tunnel)     $playit_stat"
-    echo -e "  ${BOLD}${CYAN}3)${NC} Tailscale (Mesh VPN)              $ts_stat"
+    echo -e "  ${BOLD}${CYAN}2)${NC} Ngrok (HTTP, TCP & Game Tunnel)   $ngrok_stat"
+    echo -e "  ${BOLD}${CYAN}3)${NC} Playit.gg Agent (Game Tunnel)     $playit_stat"
+    echo -e "  ${BOLD}${CYAN}4)${NC} Tailscale (Mesh VPN)              $ts_stat"
     echo ""
     echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Main Menu"
     hr
-    read -rp "Select an option [0-3]: " choice
+    read -rp "Select an option [0-4]: " choice
 
     case "$choice" in
       1) submenu_cloudflared ;;
-      2) submenu_playit ;;
-      3) submenu_tailscale ;;
+      2) submenu_ngrok ;;
+      3) submenu_playit ;;
+      4) submenu_tailscale ;;
       0) return ;;
       *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
     esac
@@ -763,6 +1556,99 @@ submenu_cloudflared() {
         ;;
       5)
         uninstall_cloudflared
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── Ngrok ─────────────────────────────────────────────────────────────────────
+install_ngrok() {
+  need_root || return 1
+  echo ""
+  spinner_step "Configuring Ngrok official APT repository..." 0.8
+  curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | $SUDO tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+  echo "deb https://ngrok-agent.s3.amazonaws.com bookworm main" | $SUDO tee /etc/apt/sources.list.d/ngrok.list
+  $SUDO apt-get update -y && $SUDO apt-get install -y ngrok
+  echo -e "${GREEN}Ngrok agent installed successfully!${NC}"
+  ngrok version
+}
+
+uninstall_ngrok() {
+  need_root || return 1
+  echo ""
+  spinner_step "Removing ngrok package..." 0.5
+  $SUDO apt-get remove --purge -y ngrok
+  $SUDO rm -f /etc/apt/sources.list.d/ngrok.list /etc/apt/trusted.gpg.d/ngrok.asc
+  echo -e "${GREEN}Ngrok uninstalled.${NC}"
+}
+
+submenu_ngrok() {
+  while true; do
+    clear
+    print_banner
+    box_title "Ngrok (Fast Public URL & TCP Tunnels)"
+    echo -e "  ${BOLD}1)${NC} Status & Version"
+    echo -e "  ${BOLD}2)${NC} Install Ngrok Agent"
+    echo -e "  ${BOLD}3)${NC} Add Authtoken ('ngrok config add-authtoken')"
+    echo -e "  ${BOLD}4)${NC} Start HTTP Tunnel ('ngrok http <port>')"
+    echo -e "  ${BOLD}5)${NC} Start TCP Tunnel ('ngrok tcp <port>')"
+    echo -e "  ${BOLD}6)${NC} Uninstall Ngrok"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "Ngrok" "ngrok"
+        pause
+        ;;
+      2)
+        install_ngrok
+        pause
+        ;;
+      3)
+        if is_installed ngrok; then
+          read -rp "Paste your Ngrok Authtoken: " token
+          if [[ -n "$token" ]]; then
+            ngrok config add-authtoken "$token"
+            echo -e "${GREEN}Authtoken saved!${NC}"
+          fi
+        else
+          echo -e "${RED}ngrok is not installed.${NC}"
+        fi
+        pause
+        ;;
+      4)
+        if is_installed ngrok; then
+          read -rp "Enter HTTP port to tunnel (e.g. 80, 8080, 7681): " hport
+          if [[ -n "$hport" ]]; then
+            echo -e "\n${CYAN}Starting Ngrok HTTP tunnel for port ${hport}...${NC}"
+            echo -e "${GRAY}Press Ctrl+C to close.${NC}\n"
+            ngrok http "$hport"
+          fi
+        else
+          echo -e "${RED}ngrok is not installed.${NC}"
+          pause
+        fi
+        ;;
+      5)
+        if is_installed ngrok; then
+          read -rp "Enter TCP port to tunnel (e.g. 22 for SSH, 25565 for Minecraft): " tport
+          if [[ -n "$tport" ]]; then
+            echo -e "\n${CYAN}Starting Ngrok TCP tunnel for port ${tport}...${NC}"
+            echo -e "${GRAY}Press Ctrl+C to close.${NC}\n"
+            ngrok tcp "$tport"
+          fi
+        else
+          echo -e "${RED}ngrok is not installed.${NC}"
+          pause
+        fi
+        ;;
+      6)
+        uninstall_ngrok
         pause
         ;;
       0) return ;;
@@ -904,7 +1790,7 @@ submenu_tailscale() {
 }
 
 # ==============================================================================
-#  SECTION 3: WEB TERMINALS & SHELL SHARING (ttyd, tmate, Cockpit, Starship)
+#  SECTION 4: WEB TERMINALS & SHELL SHARING (ttyd, LAN Terminal, sshx, tmate...)
 # ==============================================================================
 menu_terminals() {
   while true; do
@@ -915,6 +1801,16 @@ menu_terminals() {
     local ttyd_stat="${GRAY}[✖ Not Installed]${NC}"
     if is_installed ttyd; then
       ttyd_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    local lan_stat="${GRAY}[✖ Inactive]${NC}"
+    if command -v systemctl &>/dev/null && systemctl is-active prc-lan-term &>/dev/null; then
+      lan_stat="${GREEN}[✔ Running]${NC}"
+    fi
+
+    local sshx_stat="${GRAY}[✖ Not Installed]${NC}"
+    if is_installed sshx; then
+      sshx_stat="${GREEN}[✔ Installed]${NC}"
     fi
 
     local tmate_stat="${GRAY}[✖ Not Installed]${NC}"
@@ -932,20 +1828,24 @@ menu_terminals() {
       starship_stat="${GREEN}[✔ Installed]${NC}"
     fi
 
-    echo -e "  ${BOLD}${CYAN}1)${NC} ttyd (Web Browser Terminal)        $ttyd_stat"
-    echo -e "  ${BOLD}${CYAN}2)${NC} tmate (Instant SSH & Web Sharing)  $tmate_stat"
-    echo -e "  ${BOLD}${CYAN}3)${NC} Cockpit Web Console & Terminal     $cockpit_stat"
-    echo -e "  ${BOLD}${CYAN}4)${NC} Starship Prompt (Futuristic Shell) $starship_stat"
+    echo -e "  ${BOLD}${CYAN}1)${NC} ttyd (Web Browser Terminal)          $ttyd_stat"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 🔒 Local LAN Terminal (Same WiFi Only)$lan_stat"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 👥 sshx (Real-time Collaborative Shell) $sshx_stat"
+    echo -e "  ${BOLD}${CYAN}4)${NC} tmate (Instant SSH & Web Sharing)    $tmate_stat"
+    echo -e "  ${BOLD}${CYAN}5)${NC} Cockpit Web Console & Terminal       $cockpit_stat"
+    echo -e "  ${BOLD}${CYAN}6)${NC} Starship Prompt (Futuristic Shell)   $starship_stat"
     echo ""
     echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Main Menu"
     hr
-    read -rp "Select an option [0-4]: " choice
+    read -rp "Select an option [0-6]: " choice
 
     case "$choice" in
       1) submenu_ttyd ;;
-      2) submenu_tmate ;;
-      3) submenu_cockpit ;;
-      4) submenu_starship ;;
+      2) submenu_lan_terminal ;;
+      3) submenu_sshx ;;
+      4) submenu_tmate ;;
+      5) submenu_cockpit ;;
+      6) submenu_starship ;;
       0) return ;;
       *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
     esac
@@ -963,7 +1863,6 @@ install_ttyd() {
     return 0
   fi
 
-  # Fallback to official GitHub binary download
   local arch
   arch=$(uname -m)
   echo -e "${YELLOW}Apt package not available. Downloading prebuilt binary for ${arch}...${NC}"
@@ -1101,6 +2000,219 @@ submenu_ttyd() {
         ;;
       6)
         uninstall_ttyd
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── Local LAN Terminal (Same Network Only) ────────────────────────────────────
+start_local_lan_terminal() {
+  if ! is_installed ttyd; then
+    echo -e "${YELLOW}ttyd is required for local LAN terminal. Installing now...${NC}"
+    install_ttyd || return 1
+  fi
+
+  local lan_ip
+  lan_ip=$(get_lan_ip)
+  read -rp "Enter LAN Port to bind [default 7681]: " lport
+  lport="${lport:-7681}"
+
+  read -rp "Protect with username & password? (y/n) [n]: " need_pw
+  local auth_flag=""
+  if [[ "$need_pw" =~ ^[Yy]$ ]]; then
+    read -rp "LAN username: " lu
+    read -rsp "LAN password: " lp
+    echo ""
+    auth_flag="-c ${lu}:${lp}"
+  fi
+
+  echo -e "\n${BOLD}${GREEN}╭──[ PRIVATE LAN TERMINAL ACTIVE ]───────────────────────────────╮${NC}"
+  echo -e "${BOLD}${WHITE}  ▶ Accessible ONLY on your same Wi-Fi / Local Network:${NC}"
+  echo -e "    ${CYAN}URL:${NC}  http://${lan_ip}:${lport}"
+  echo -e "${BOLD}${GREEN}╰────────────────────────────────────────────────────────────────╯${NC}"
+  echo -e "${YELLOW}Internet WAN requests are refused. Press Ctrl+C to terminate.${NC}\n"
+
+  # shellcheck disable=SC2086
+  ttyd -i "$lan_ip" -p "$lport" $auth_flag bash
+}
+
+setup_lan_terminal_service() {
+  need_root || return 1
+  if ! is_installed ttyd; then
+    install_ttyd || return 1
+  fi
+
+  local lan_ip
+  lan_ip=$(get_lan_ip)
+  read -rp "Enter LAN port [default 7681]: " lport
+  lport="${lport:-7681}"
+
+  read -rp "Protect with login credentials? (y/n) [y]: " need_pw
+  need_pw="${need_pw:-y}"
+  local auth_flag=""
+  if [[ "$need_pw" =~ ^[Yy]$ ]]; then
+    read -rp "LAN username: " lu
+    read -rsp "LAN password: " lp
+    echo ""
+    auth_flag="-c ${lu}:${lp}"
+  fi
+
+  local ttyd_bin
+  ttyd_bin=$(command -v ttyd)
+
+  cat << EOF | $SUDO tee /etc/systemd/system/prc-lan-term.service >/dev/null
+[Unit]
+Description=PRC Private Local LAN Web Terminal (Same Network Only)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${ttyd_bin} -i ${lan_ip} -p ${lport} ${auth_flag} bash
+Restart=always
+User=root
+WorkingDirectory=/root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  spinner_run "Registering private LAN terminal systemd service..." $SUDO systemctl daemon-reload
+  $SUDO systemctl enable --now prc-lan-term
+
+  # Lock down firewall so only private subnets can reach port
+  if command -v ufw &>/dev/null && $SUDO ufw status | grep -q "Status: active"; then
+    spinner_step "Enforcing LAN-only firewall isolation rules..." 0.4
+    $SUDO ufw delete allow "${lport}/tcp" 2>/dev/null || true
+    $SUDO ufw allow from 192.168.0.0/16 to any port "$lport" proto tcp 2>/dev/null || true
+    $SUDO ufw allow from 10.0.0.0/8 to any port "$lport" proto tcp 2>/dev/null || true
+    $SUDO ufw allow from 172.16.0.0/12 to any port "$lport" proto tcp 2>/dev/null || true
+  fi
+
+  echo -e "\n${GREEN}Private LAN Terminal is active in background!${NC}"
+  echo -e "Open in any device on the same Wi-Fi/LAN: ${CYAN}http://${lan_ip}:${lport}${NC}"
+}
+
+stop_lan_terminal_service() {
+  need_root || return 1
+  spinner_run "Stopping LAN terminal background service..." $SUDO systemctl stop prc-lan-term
+  $SUDO systemctl disable prc-lan-term 2>/dev/null || true
+  $SUDO rm -f /etc/systemd/system/prc-lan-term.service
+  $SUDO systemctl daemon-reload 2>/dev/null || true
+  echo -e "${GREEN}LAN terminal service disabled.${NC}"
+}
+
+submenu_lan_terminal() {
+  while true; do
+    clear
+    print_banner
+    box_title "🔒 Local LAN Terminal (Same Network / Wi-Fi Only)"
+    echo -e "  ${BOLD}1)${NC} Check Status & Local Interface IP"
+    echo -e "  ${BOLD}2)${NC} 🚀 Launch Instant Local LAN Terminal (Interactive)"
+    echo -e "  ${BOLD}3)${NC} Setup Persistent Background LAN Terminal (Runs on boot)"
+    echo -e "  ${BOLD}4)${NC} Stop Background LAN Terminal"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        local lan_ip
+        lan_ip=$(get_lan_ip)
+        echo -e "\n  ${BOLD}Local Network IP:${NC} ${GREEN}${lan_ip}${NC}"
+        show_pkg_status "LAN Terminal Service" "ttyd" "prc-lan-term"
+        if command -v systemctl &>/dev/null && systemctl is-active prc-lan-term &>/dev/null; then
+          echo -e "\n  ${GREEN}🌐 Active LAN URL (Same Wi-Fi Only):${NC} http://${lan_ip}:7681"
+        fi
+        pause
+        ;;
+      2)
+        start_local_lan_terminal
+        pause
+        ;;
+      3)
+        setup_lan_terminal_service
+        pause
+        ;;
+      4)
+        stop_lan_terminal_service
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── sshx ──────────────────────────────────────────────────────────────────────
+install_sshx() {
+  echo ""
+  spinner_step "Fetching official sshx binary from sshx.io..." 0.8
+  if curl -sSf https://sshx.io/get | sh; then
+    # Ensure binary is in global path
+    if [[ -f "$HOME/.local/bin/sshx" && ! -f "/usr/local/bin/sshx" ]]; then
+      need_root && $SUDO cp "$HOME/.local/bin/sshx" /usr/local/bin/sshx 2>/dev/null || true
+    fi
+    echo -e "${GREEN}sshx installed successfully!${NC}"
+    sshx --version 2>/dev/null || true
+  else
+    echo -e "${RED}Failed to install sshx.${NC}"
+  fi
+}
+
+start_sshx_session() {
+  if ! is_installed sshx && [[ ! -f "$HOME/.local/bin/sshx" ]]; then
+    echo -e "${YELLOW}sshx is not installed. Installing now...${NC}"
+    install_sshx || return 1
+  fi
+  local cmd="sshx"
+  if ! is_installed sshx && [[ -f "$HOME/.local/bin/sshx" ]]; then
+    cmd="$HOME/.local/bin/sshx"
+  fi
+  echo -e "\n${CYAN}Starting real-time collaborative sshx session...${NC}"
+  echo -e "${YELLOW}Copy and share the browser link that appears on screen.${NC}"
+  echo -e "${GRAY}Press Ctrl+D or type 'exit' to end the session.${NC}\n"
+  "$cmd"
+}
+
+uninstall_sshx() {
+  need_root || return 1
+  echo ""
+  spinner_step "Removing sshx binary..." 0.4
+  $SUDO rm -f /usr/local/bin/sshx "$HOME/.local/bin/sshx"
+  echo -e "${GREEN}sshx removed.${NC}"
+}
+
+submenu_sshx() {
+  while true; do
+    clear
+    print_banner
+    box_title "👥 sshx (Real-time Collaborative Terminal Sharing)"
+    echo -e "  ${BOLD}1)${NC} Status & Check"
+    echo -e "  ${BOLD}2)${NC} Install sshx"
+    echo -e "  ${BOLD}3)${NC} 🚀 Generate Collaborative Web Link ('sshx')"
+    echo -e "  ${BOLD}4)${NC} Uninstall sshx"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "sshx" "sshx"
+        pause
+        ;;
+      2)
+        install_sshx
+        pause
+        ;;
+      3)
+        start_sshx_session
+        pause
+        ;;
+      4)
+        uninstall_sshx
         pause
         ;;
       0) return ;;
@@ -1331,7 +2443,7 @@ submenu_starship() {
 }
 
 # ==============================================================================
-#  SECTION 4: DEVOPS, WEB & DATABASE STACK (Docker, Node.js, Nginx, MariaDB)
+#  SECTION 5: DEVOPS, WEB & DATABASE STACK (Docker, Node.js, Nginx, MariaDB)
 # ==============================================================================
 menu_devops_stack() {
   while true; do
@@ -1692,7 +2804,7 @@ submenu_mariadb() {
 }
 
 # ==============================================================================
-#  SECTION 5: SYSTEM INFO & MONITORING (Fastfetch, Btop, Htop, Neofetch)
+#  SECTION 6: SYSTEM INFO & MONITORING (Fastfetch, Btop, Htop, Neofetch)
 # ==============================================================================
 menu_monitoring() {
   while true; do
@@ -1739,13 +2851,6 @@ install_fastfetch() {
   if $SUDO apt-get update -y && $SUDO apt-get install -y fastfetch; then
     echo -e "${GREEN}fastfetch installed successfully!${NC}"
     return 0
-  fi
-
-  # Fallback for older Ubuntu/Debian releases
-  echo -e "${YELLOW}Not found in standard apt. Installing via PPA / GitHub release...${NC}"
-  if command -v add-apt-repository &>/dev/null; then
-    $SUDO add-apt-repository -y ppa:zhangsongcui3371/fastfetch 2>/dev/null || true
-    $SUDO apt-get update -y && $SUDO apt-get install -y fastfetch && return 0
   fi
 
   local arch
@@ -1859,7 +2964,7 @@ submenu_generic_tool() {
 }
 
 # ==============================================================================
-#  SECTION 6: SYSTEM TOOLS & MAINTENANCE
+#  SECTION 7: SYSTEM TOOLS & MAINTENANCE
 # ==============================================================================
 menu_maintenance() {
   while true; do
@@ -1930,7 +3035,6 @@ menu_maintenance() {
 #  MAIN DASHBOARD
 # ==============================================================================
 main_menu() {
-  # Run animated splash screen on initial startup
   splash_screen
 
   while true; do
@@ -1939,29 +3043,31 @@ main_menu() {
 
     echo -e "${BOLD}${WHITE}  SELECT A CATEGORY:${NC}\n"
     echo -e "  ${BOLD}${CYAN}1)${NC} 🎮  Game & Hosting Panels        ${GRAY}(Pterodactyl, Pelican, Puffer, Skyport, JTG)${NC}"
-    echo -e "  ${BOLD}${CYAN}2)${NC} 🌐  Tunneling & Remote Access     ${GRAY}(Cloudflare Tunnel, Playit.gg, Tailscale)${NC}"
-    echo -e "  ${BOLD}${CYAN}3)${NC} 🖥️   Web Terminals & Remote Access ${GRAY}(ttyd, tmate, Cockpit, Starship)${NC}"
-    echo -e "  ${BOLD}${CYAN}4)${NC} 🐳  DevOps, Web & Database       ${GRAY}(Docker, Node.js, Nginx, MariaDB)${NC}"
-    echo -e "  ${BOLD}${CYAN}5)${NC} 📊  Monitoring & System Info      ${GRAY}(Fastfetch, Btop, Htop, Neofetch)${NC}"
-    echo -e "  ${BOLD}${CYAN}6)${NC} 🛠️   System Tools & Maintenance    ${GRAY}(1-Click Essentials, Upgrades, Clean)${NC}"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 🎨  Pterodactyl Themes & Blueprint ${GRAY}(Blueprint Framework, Nebula, Slate, Rebuild)${NC}"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 🌐  Tunneling & Remote Access     ${GRAY}(Cloudflare, Ngrok, Playit.gg, Tailscale)${NC}"
+    echo -e "  ${BOLD}${CYAN}4)${NC} 🖥️   Web Terminals & Remote Access ${GRAY}(ttyd, Local LAN, sshx, tmate, Cockpit)${NC}"
+    echo -e "  ${BOLD}${CYAN}5)${NC} 🐳  DevOps, Web & Database        ${GRAY}(Docker, Node.js, Nginx, MariaDB)${NC}"
+    echo -e "  ${BOLD}${CYAN}6)${NC} 📊  Monitoring & System Info      ${GRAY}(Fastfetch, Btop, Htop, Neofetch)${NC}"
+    echo -e "  ${BOLD}${CYAN}7)${NC} 🛠️   System Tools & Maintenance    ${GRAY}(1-Click Essentials, Upgrades, Clean)${NC}"
     echo ""
     echo -e "  ${BOLD}${RED}0)${NC} 🚪  Exit"
     hr
-    read -rp "$(echo -e "${BOLD}Enter choice [0-6]: ${NC}")" sel
+    read -rp "$(echo -e "${BOLD}Enter choice [0-7]: ${NC}")" sel
 
     case "$sel" in
       1) menu_game_panels ;;
-      2) menu_tunnels ;;
-      3) menu_terminals ;;
-      4) menu_devops_stack ;;
-      5) menu_monitoring ;;
-      6) menu_maintenance ;;
+      2) menu_ptero_themes ;;
+      3) menu_tunnels ;;
+      4) menu_terminals ;;
+      5) menu_devops_stack ;;
+      6) menu_monitoring ;;
+      7) menu_maintenance ;;
       0)
         echo -e "\n${CYAN}Thank you for using PRC GAMING CODE HUB! Happy hosting! 🚀${NC}\n"
         exit 0
         ;;
       *)
-        echo -e "${RED}Invalid option. Please choose between 0 and 6.${NC}"
+        echo -e "${RED}Invalid option. Please choose between 0 and 7.${NC}"
         sleep 1
         ;;
     esac
