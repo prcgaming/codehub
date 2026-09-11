@@ -24,6 +24,96 @@ RED="${ESC}[1;31m"
 WHITE="${ESC}[1;37m"
 GRAY="${ESC}[38;5;244m"
 
+# ── Cursor & Terminal Safety ──────────────────────────────────────────────────
+hide_cursor() {
+  tput civis 2>/dev/null || printf "\033[?25l"
+}
+
+restore_cursor() {
+  tput cnorm 2>/dev/null || printf "\033[?25h"
+}
+
+# Trap terminal exits so cursor is always restored
+trap 'restore_cursor; echo -e "\n\n${CYAN}Exiting PRC Gaming Code Hub. Goodbye!${NC}"; exit 0' INT TERM EXIT
+
+# ── Animation & Loading System ────────────────────────────────────────────────
+# 1. Timed Spinner for steps / transitions
+spinner_step() {
+  local msg="$1"
+  local duration="${2:-0.6}"
+  local spin_chars=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local steps=8
+  local delay
+  delay=$(awk -v d="$duration" -v s="$steps" 'BEGIN {print d/s}' 2>/dev/null || echo "0.08")
+
+  hide_cursor
+  for ((i=0; i<steps; i++)); do
+    local char="${spin_chars[$(( i % 10 ))]}"
+    printf "\r  ${CYAN}%s${NC} %s " "$char" "$msg"
+    sleep "$delay" 2>/dev/null || sleep 0.08
+  done
+  printf "\r  ${GREEN}✔${NC} %s ${GREEN}[Done]${NC}\n" "$msg"
+  restore_cursor
+}
+
+# 2. Command Execution with Live Spinner
+spinner_run() {
+  local msg="$1"
+  shift
+  local spin_chars=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local i=0
+  local log_file="/tmp/prc_cmd_$$.log"
+
+  hide_cursor
+  "$@" > "$log_file" 2>&1 &
+  local pid=$!
+
+  while kill -0 "$pid" 2>/dev/null; do
+    local char="${spin_chars[$(( i % 10 ))]}"
+    printf "\r  ${CYAN}%s${NC} %s " "$char" "$msg"
+    sleep 0.08
+    ((i++))
+  done
+
+  wait "$pid"
+  local code=$?
+  restore_cursor
+
+  if [[ $code -eq 0 ]]; then
+    printf "\r  ${GREEN}✔${NC} %s ${GREEN}[Success]${NC}\n" "$msg"
+    rm -f "$log_file"
+    return 0
+  else
+    printf "\r  ${RED}✖${NC} %s ${RED}[Failed (Exit Code: $code)]${NC}\n" "$msg"
+    if [[ -s "$log_file" ]]; then
+      echo -e "    ${GRAY}Error output:${NC}"
+      tail -n 6 "$log_file" | sed 's/^/      /'
+    fi
+    rm -f "$log_file"
+    return "$code"
+  fi
+}
+
+# 3. Futuristic Cyberpunk Progress Bar
+progress_loader() {
+  local title="$1"
+  local total_steps="${2:-24}"
+  local step_delay="${3:-0.03}"
+
+  hide_cursor
+  echo -e "  ${BOLD}${WHITE}${title}${NC}"
+  for ((step=1; step<=total_steps; step++)); do
+    local pct=$(( (step * 100) / total_steps ))
+    local bar=""
+    for ((f=0; f<step; f++)); do bar+="█"; done
+    for ((e=step; e<total_steps; e++)); do bar+="░"; done
+    printf "\r  ${MAGENTA}❲${CYAN}%s${MAGENTA}❳ ${WHITE}%3d%%${NC}" "$bar" "$pct"
+    sleep "$step_delay"
+  done
+  printf " ${GREEN}✔ Ready${NC}\n\n"
+  restore_cursor
+}
+
 # ── Utility & Helper Functions ────────────────────────────────────────────────
 pause() {
   echo ""
@@ -136,9 +226,33 @@ EOF
   echo -e "${BLUE}╰─────────────────────────────────────────────────────────────────╯${NC}"
 }
 
+# ── Splash / Loading Screen on Launch ─────────────────────────────────────────
+splash_screen() {
+  clear
+  echo -e "${CYAN}"
+  cat << "EOF"
+  ██████╗ ██████╗  ██████╗     ██████╗  █████╗ ███╗   ███╗██╗███╗   ██╗ ██████╗ 
+  ██╔══██╗██╔══██╗██╔════╝    ██╔════╝ ██╔══██╗████╗ ████║██║████╗  ██║██╔════╝ 
+  ██████╔╝██████╔╝██║         ██║  ███╗███████║██╔████╔██║██║██╔██╗ ██║██║  ███╗
+  ██╔═══╝ ██╔══██╗██║         ██║   ██║██╔══██║██║╚██╔╝██║██║██║╚██╗██║██║   ██║
+  ██║     ██║  ██║╚██████╗    ╚██████╔╝██║  ██║██║ ╚═╝ ██║██║██║ ╚████║╚██████╔╝
+  ╚═╝     ╚═╝  ╚═╝ ╚═════╝     ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+EOF
+  echo -e "                   ${MAGENTA}⚡ ${BOLD}${WHITE}C O D E   H U B  —  I N S T A L L E R${NC} ${MAGENTA}⚡${NC}\n"
+
+  progress_loader "Bootstrapping PRC Gaming Code Hub System..." 24 0.025
+  spinner_step "Querying host kernel and hardware architecture..." 0.35
+  spinner_step "Checking network adapters & public interface..." 0.35
+  spinner_step "Scanning installed game panels & background services..." 0.4
+  echo ""
+  sleep 0.2
+}
+
 # ── Reusable Status Viewers ───────────────────────────────────────────────────
 show_pkg_status() {
   local name="$1" cmd="$2" service="${3:-}"
+  echo ""
+  spinner_step "Inspecting $name status and binaries..." 0.3
   echo -e "\n${BOLD}${CYAN}=== $name Status Inspection ===${NC}\n"
   if is_installed "$cmd"; then
     echo -e "  ${GREEN}✔ Status:${NC}       ${BOLD}Installed${NC}"
@@ -154,7 +268,7 @@ show_pkg_status() {
 
   if [[ -n "$service" ]] && command -v systemctl &>/dev/null; then
     echo ""
-    if systemctl list-unit-files 2>/dev/null | grep -qE "^${service}(\.service)?"; then
+    if systemctl list-unit-files 2>/dev/null | grep -qE "^${service}(\.service|\.socket)?"; then
       local state
       state=$(systemctl is-active "$service" 2>/dev/null || echo "inactive")
       local enabled
@@ -168,6 +282,8 @@ show_pkg_status() {
 
 show_script_panel_status() {
   local name="$1" paths_csv="$2" services_csv="$3"
+  echo ""
+  spinner_step "Running deep filesystem & service audit for $name..." 0.4
   echo -e "\n${BOLD}${CYAN}=== $name Status (Deep Inspection) ===${NC}\n"
   local found=0
 
@@ -182,7 +298,7 @@ show_script_panel_status() {
   if [[ -n "$services_csv" ]] && command -v systemctl &>/dev/null; then
     IFS=',' read -ra srvs <<< "$services_csv"
     for srv in "${srvs[@]}"; do
-      if systemctl list-unit-files 2>/dev/null | grep -qE "^${srv}(\.service)?"; then
+      if systemctl list-unit-files 2>/dev/null | grep -qE "^${srv}(\.service|\.socket)?"; then
         local state
         state=$(systemctl is-active "$srv" 2>/dev/null || echo "inactive")
         echo -e "  ${GREEN}✔ Service '${srv}':${NC} active state: ${BOLD}$state${NC}"
@@ -332,11 +448,15 @@ submenu_pelican() {
 # ── PufferPanel ───────────────────────────────────────────────────────────────
 install_pufferpanel() {
   need_root || return 1
-  echo -e "\n${CYAN}Setting up PufferPanel package repository...${NC}"
+  echo ""
+  spinner_step "Configuring PufferPanel PackageCloud repository..." 1.0
   curl -s https://packagecloud.io/install/repositories/pufferpanel/pufferpanel/script.deb.sh | $SUDO bash
-  echo -e "\n${CYAN}Installing PufferPanel...${NC}"
+
+  echo -e "\n${CYAN}Installing PufferPanel package...${NC}"
   $SUDO apt-get update -y && $SUDO apt-get install -y pufferpanel
-  $SUDO systemctl enable --now pufferpanel
+
+  spinner_run "Starting and enabling PufferPanel service..." $SUDO systemctl enable --now pufferpanel
+
   echo -e "\n${GREEN}PufferPanel service started on port 8080!${NC}"
   echo -e "${YELLOW}Creating administrative user now...${NC}\n"
   $SUDO pufferpanel user add
@@ -345,8 +465,9 @@ install_pufferpanel() {
 
 uninstall_pufferpanel() {
   need_root || return 1
+  echo ""
+  spinner_run "Stopping PufferPanel service..." $SUDO systemctl stop pufferpanel
   echo -e "\n${CYAN}Uninstalling PufferPanel...${NC}"
-  $SUDO systemctl stop pufferpanel 2>/dev/null || true
   $SUDO apt-get remove --purge -y pufferpanel
   $SUDO rm -rf /var/lib/pufferpanel /etc/pufferpanel
   echo -e "${GREEN}PufferPanel removed.${NC}"
@@ -389,8 +510,7 @@ submenu_pufferpanel() {
         ;;
       4)
         need_root || continue
-        $SUDO systemctl restart pufferpanel
-        echo -e "${GREEN}PufferPanel service restarted.${NC}"
+        spinner_run "Restarting PufferPanel service..." $SUDO systemctl restart pufferpanel
         pause
         ;;
       5)
@@ -406,8 +526,8 @@ submenu_pufferpanel() {
 # ── Skyport Panel ─────────────────────────────────────────────────────────────
 install_skyport() {
   need_root || return 1
-  echo -e "\n${CYAN}Starting Skyport Panel installation...${NC}"
-  # Check if Skyport one-line installer is reachable
+  echo ""
+  spinner_step "Initializing Skyport Panel deployment..." 0.8
   if curl -fsSL https://skyport.akashhalder.in/installer.sh &>/dev/null; then
     echo -e "${CYAN}Executing Skyport installer script...${NC}"
     curl -fsSL https://skyport.akashhalder.in/installer.sh | bash
@@ -427,8 +547,8 @@ install_skyport() {
 
 uninstall_skyport() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling Skyport Panel...${NC}"
-  $SUDO systemctl stop skyport 2>/dev/null || true
+  echo ""
+  spinner_run "Stopping Skyport background processes..." $SUDO systemctl stop skyport
   $SUDO rm -rf /var/www/skyport /opt/skyport /etc/systemd/system/skyport.service
   $SUDO systemctl daemon-reload 2>/dev/null || true
   echo -e "${GREEN}Skyport files removed.${NC}"
@@ -562,7 +682,8 @@ install_cloudflared() {
     *)     deb_arch="amd64" ;;
   esac
 
-  echo -e "\n${CYAN}Downloading latest Cloudflare Tunnel (cloudflared-${deb_arch})...${NC}"
+  echo ""
+  spinner_step "Querying Cloudflare release servers for ${deb_arch} package..." 0.6
   local tmp_deb="/tmp/cloudflared.deb"
   local url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${deb_arch}.deb"
 
@@ -584,8 +705,8 @@ install_cloudflared() {
 
 uninstall_cloudflared() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling cloudflared...${NC}"
-  $SUDO systemctl stop cloudflared 2>/dev/null || true
+  echo ""
+  spinner_run "Stopping cloudflared daemon..." $SUDO systemctl stop cloudflared
   $SUDO apt-get remove --purge -y cloudflared
   $SUDO rm -f /etc/apt/sources.list.d/cloudflared.list
   echo -e "${GREEN}cloudflared removed.${NC}"
@@ -596,7 +717,7 @@ quick_test_cloudflared() {
     echo -e "${RED}cloudflared is not installed!${NC}"
     return 1
   fi
-  read -rp "Enter local port to expose (e.g. 80, 8080, 25565): " lport
+  read -rp "Enter local port to expose (e.g. 80, 8080, 7681, 25565): " lport
   if [[ -n "$lport" ]]; then
     echo -e "\n${CYAN}Creating temporary Cloudflare quick tunnel for http://localhost:${lport}...${NC}"
     echo -e "${YELLOW}Press Ctrl+C to stop the tunnel at any time.${NC}\n"
@@ -653,7 +774,8 @@ submenu_cloudflared() {
 # ── Playit.gg ─────────────────────────────────────────────────────────────────
 install_playit() {
   need_root || return 1
-  echo -e "\n${CYAN}Setting up Playit.gg repository...${NC}"
+  echo ""
+  spinner_step "Configuring Playit.gg APT PPA repository..." 0.8
   curl -SsL https://playit-cloud.github.io/ppa/key.gpg | gpg --dearmor | $SUDO tee /etc/apt/trusted.gpg.d/playit.gpg >/dev/null
   echo "deb [signed-by=/etc/apt/trusted.gpg.d/playit.gpg] https://playit-cloud.github.io/ppa/data ./" | $SUDO tee /etc/apt/sources.list.d/playit.list
   $SUDO apt-get update -y && $SUDO apt-get install -y playit
@@ -662,8 +784,8 @@ install_playit() {
 
 uninstall_playit() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling Playit.gg...${NC}"
-  $SUDO systemctl stop playit 2>/dev/null || true
+  echo ""
+  spinner_run "Stopping Playit agent service..." $SUDO systemctl stop playit
   $SUDO apt-get remove --purge -y playit
   $SUDO rm -f /etc/apt/sources.list.d/playit.list /etc/apt/trusted.gpg.d/playit.gpg
   echo -e "${GREEN}Playit.gg removed.${NC}"
@@ -703,8 +825,7 @@ submenu_playit() {
         ;;
       4)
         need_root || continue
-        $SUDO systemctl enable --now playit
-        echo -e "${GREEN}Playit service enabled and started.${NC}"
+        spinner_run "Enabling and starting Playit service..." $SUDO systemctl enable --now playit
         pause
         ;;
       5)
@@ -720,15 +841,16 @@ submenu_playit() {
 # ── Tailscale ─────────────────────────────────────────────────────────────────
 install_tailscale() {
   need_root || return 1
-  echo -e "\n${CYAN}Installing Tailscale via official script...${NC}"
+  echo ""
+  spinner_step "Executing Tailscale official setup script..." 0.8
   curl -fsSL https://tailscale.com/install.sh | sh
   echo -e "${GREEN}Tailscale installed successfully!${NC}"
 }
 
 uninstall_tailscale() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling Tailscale...${NC}"
-  $SUDO tailscale down 2>/dev/null || true
+  echo ""
+  spinner_run "Disconnecting Tailscale mesh network..." $SUDO tailscale down
   $SUDO apt-get remove --purge -y tailscale
   echo -e "${GREEN}Tailscale removed.${NC}"
 }
@@ -768,8 +890,7 @@ submenu_tailscale() {
         ;;
       4)
         need_root || continue
-        $SUDO tailscale down
-        echo -e "${YELLOW}Tailscale disconnected.${NC}"
+        spinner_run "Disconnecting Tailscale..." $SUDO tailscale down
         pause
         ;;
       5)
@@ -783,7 +904,434 @@ submenu_tailscale() {
 }
 
 # ==============================================================================
-#  SECTION 3: DEVOPS, WEB & DATABASE STACK (Docker, Node.js, Nginx, MariaDB)
+#  SECTION 3: WEB TERMINALS & SHELL SHARING (ttyd, tmate, Cockpit, Starship)
+# ==============================================================================
+menu_terminals() {
+  while true; do
+    clear
+    print_banner
+    box_title "🖥️  Web Terminals & Remote Access"
+
+    local ttyd_stat="${GRAY}[✖ Not Installed]${NC}"
+    if is_installed ttyd; then
+      ttyd_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    local tmate_stat="${GRAY}[✖ Not Installed]${NC}"
+    if is_installed tmate; then
+      tmate_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    local cockpit_stat="${GRAY}[✖ Not Installed]${NC}"
+    if command -v cockpit-bridge &>/dev/null || (command -v systemctl &>/dev/null && systemctl list-unit-files 2>/dev/null | grep -q "cockpit.socket"); then
+      cockpit_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    local starship_stat="${GRAY}[✖ Not Installed]${NC}"
+    if is_installed starship; then
+      starship_stat="${GREEN}[✔ Installed]${NC}"
+    fi
+
+    echo -e "  ${BOLD}${CYAN}1)${NC} ttyd (Web Browser Terminal)        $ttyd_stat"
+    echo -e "  ${BOLD}${CYAN}2)${NC} tmate (Instant SSH & Web Sharing)  $tmate_stat"
+    echo -e "  ${BOLD}${CYAN}3)${NC} Cockpit Web Console & Terminal     $cockpit_stat"
+    echo -e "  ${BOLD}${CYAN}4)${NC} Starship Prompt (Futuristic Shell) $starship_stat"
+    echo ""
+    echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Main Menu"
+    hr
+    read -rp "Select an option [0-4]: " choice
+
+    case "$choice" in
+      1) submenu_ttyd ;;
+      2) submenu_tmate ;;
+      3) submenu_cockpit ;;
+      4) submenu_starship ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid selection${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── ttyd ──────────────────────────────────────────────────────────────────────
+install_ttyd() {
+  need_root || return 1
+  echo ""
+  spinner_step "Checking package repositories for ttyd..." 0.5
+  if $SUDO apt-get update -y && $SUDO apt-get install -y ttyd; then
+    echo -e "${GREEN}ttyd installed via package manager!${NC}"
+    ttyd --version
+    return 0
+  fi
+
+  # Fallback to official GitHub binary download
+  local arch
+  arch=$(uname -m)
+  echo -e "${YELLOW}Apt package not available. Downloading prebuilt binary for ${arch}...${NC}"
+  local url="https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.${arch}"
+  if curl -fsSL -o /tmp/ttyd "$url"; then
+    $SUDO mv /tmp/ttyd /usr/local/bin/ttyd
+    $SUDO chmod +x /usr/local/bin/ttyd
+    echo -e "${GREEN}ttyd binary installed to /usr/local/bin/ttyd successfully!${NC}"
+    /usr/local/bin/ttyd --version
+  else
+    echo -e "${RED}Failed to download ttyd from $url.${NC}"
+  fi
+}
+
+start_quick_ttyd() {
+  if ! is_installed ttyd; then
+    echo -e "${RED}ttyd is not installed. Please install it first.${NC}"
+    return 1
+  fi
+  read -rp "Enter port to run web terminal on [default 7681]: " port
+  port="${port:-7681}"
+
+  read -rp "Enable password protection? (y/n) [n]: " need_auth
+  local auth_flag=""
+  if [[ "$need_auth" =~ ^[Yy]$ ]]; then
+    read -rp "Enter username: " tty_user
+    read -rsp "Enter password: " tty_pass
+    echo ""
+    auth_flag="-c ${tty_user}:${tty_pass}"
+  fi
+
+  echo -e "\n${CYAN}Starting ttyd on http://$(get_ip_info):${port} ...${NC}"
+  echo -e "${YELLOW}Open http://$(get_ip_info):${port} in your browser to access the terminal!${NC}"
+  echo -e "${GRAY}Press Ctrl+C in this window to stop the session.${NC}\n"
+  # shellcheck disable=SC2086
+  ttyd -p "$port" $auth_flag bash
+}
+
+setup_ttyd_service() {
+  need_root || return 1
+  if ! is_installed ttyd; then
+    echo -e "${RED}ttyd is not installed. Please install it first.${NC}"
+    return 1
+  fi
+  read -rp "Enter port for persistent web terminal [default 7681]: " port
+  port="${port:-7681}"
+
+  read -rp "Enable password protection? (y/n) [y]: " need_auth
+  need_auth="${need_auth:-y}"
+  local auth_flag=""
+  if [[ "$need_auth" =~ ^[Yy]$ ]]; then
+    read -rp "Enter web terminal username: " tty_user
+    read -rsp "Enter web terminal password: " tty_pass
+    echo ""
+    auth_flag="-c ${tty_user}:${tty_pass}"
+  fi
+
+  local ttyd_bin
+  ttyd_bin=$(command -v ttyd)
+
+  cat << EOF | $SUDO tee /etc/systemd/system/ttyd.service >/dev/null
+[Unit]
+Description=ttyd - Web Terminal Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${ttyd_bin} -p ${port} ${auth_flag} bash
+Restart=always
+User=root
+WorkingDirectory=/root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  spinner_run "Enabling and starting persistent ttyd service..." $SUDO systemctl daemon-reload
+  $SUDO systemctl enable --now ttyd
+  echo -e "\n${GREEN}ttyd systemd service active!${NC}"
+  echo -e "Access your browser terminal at: ${CYAN}http://$(get_ip_info):${port}${NC}"
+}
+
+uninstall_ttyd() {
+  need_root || return 1
+  echo ""
+  spinner_run "Stopping ttyd background service..." $SUDO systemctl stop ttyd
+  $SUDO systemctl disable ttyd 2>/dev/null || true
+  $SUDO rm -f /etc/systemd/system/ttyd.service
+  $SUDO systemctl daemon-reload 2>/dev/null || true
+  $SUDO apt-get remove --purge -y ttyd 2>/dev/null || true
+  $SUDO rm -f /usr/local/bin/ttyd
+  echo -e "${GREEN}ttyd removed.${NC}"
+}
+
+submenu_ttyd() {
+  while true; do
+    clear
+    print_banner
+    box_title "ttyd (Web Browser Terminal Server)"
+    echo -e "  ${BOLD}1)${NC} Check Status"
+    echo -e "  ${BOLD}2)${NC} Install ttyd"
+    echo -e "  ${BOLD}3)${NC} Launch Instant Web Terminal (Interactive)"
+    echo -e "  ${BOLD}4)${NC} Install Persistent Background Service (systemd on port 7681)"
+    echo -e "  ${BOLD}5)${NC} Stop Background Service"
+    echo -e "  ${BOLD}6)${NC} Uninstall ttyd"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "ttyd" "ttyd" "ttyd"
+        if command -v systemctl &>/dev/null && systemctl is-active ttyd &>/dev/null; then
+          echo -e "\n  ${GREEN}🌐 Active Web Terminal:${NC} http://$(get_ip_info):7681"
+        fi
+        pause
+        ;;
+      2)
+        install_ttyd
+        pause
+        ;;
+      3)
+        start_quick_ttyd
+        pause
+        ;;
+      4)
+        setup_ttyd_service
+        pause
+        ;;
+      5)
+        need_root || continue
+        spinner_run "Stopping ttyd service..." $SUDO systemctl stop ttyd
+        $SUDO systemctl disable ttyd 2>/dev/null || true
+        pause
+        ;;
+      6)
+        uninstall_ttyd
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── tmate ─────────────────────────────────────────────────────────────────────
+install_tmate() {
+  need_root || return 1
+  echo ""
+  spinner_step "Updating package sources for tmate..." 0.5
+  $SUDO apt-get update -y && $SUDO apt-get install -y tmate
+  echo -e "${GREEN}tmate installed successfully!${NC}"
+}
+
+generate_tmate_session() {
+  if ! is_installed tmate; then
+    echo -e "${RED}tmate is not installed. Please install it first.${NC}"
+    return 1
+  fi
+  echo ""
+  spinner_step "Initializing local session socket..." 0.3
+  local sock="/tmp/tmate_prc_$$.sock"
+  tmate -S "$sock" new-session -d
+
+  spinner_step "Negotiating cryptographic relay handshake with tmate servers..." 1.0
+  tmate -S "$sock" wait-for-client-ready 2>/dev/null || sleep 2
+
+  local ssh_url web_url ssh_ro web_ro
+  ssh_url=$(tmate -S "$sock" display -p '#{tmate_ssh}' 2>/dev/null)
+  web_url=$(tmate -S "$sock" display -p '#{tmate_web}' 2>/dev/null)
+  ssh_ro=$(tmate -S "$sock" display -p '#{tmate_ssh_ro}' 2>/dev/null)
+  web_ro=$(tmate -S "$sock" display -p '#{tmate_web_ro}' 2>/dev/null)
+
+  echo -e "\n${BOLD}${GREEN}╭──[ INSTANT TERMINAL ACCESS GRANTED ]───────────────────────────╮${NC}"
+  echo -e "${BOLD}${WHITE}  ▶ Full Control (Read/Write):${NC}"
+  echo -e "    ${CYAN}SSH:${NC}  $ssh_url"
+  echo -e "    ${CYAN}Web:${NC}  $web_url"
+  echo ""
+  echo -e "${BOLD}${WHITE}  ▶ Read-Only (Safe Viewer):${NC}"
+  echo -e "    ${GRAY}SSH:${NC}  $ssh_ro"
+  echo -e "    ${GRAY}Web:${NC}  $web_ro"
+  echo -e "${BOLD}${GREEN}╰────────────────────────────────────────────────────────────────╯${NC}"
+  echo -e "\n${YELLOW}Share the SSH command or Web URL with anyone who needs terminal access!${NC}"
+  echo -e "${GRAY}Type 'attach' to connect locally, or press Enter to terminate session.${NC}"
+  read -rp "Selection: " act
+  if [[ "$act" == "attach" ]]; then
+    tmate -S "$sock" attach
+  fi
+  tmate -S "$sock" kill-session 2>/dev/null || true
+  rm -f "$sock"
+}
+
+uninstall_tmate() {
+  need_root || return 1
+  echo ""
+  spinner_step "Removing tmate package..." 0.5
+  $SUDO apt-get remove --purge -y tmate
+  echo -e "${GREEN}tmate removed.${NC}"
+}
+
+submenu_tmate() {
+  while true; do
+    clear
+    print_banner
+    box_title "tmate (Instant Terminal Sharing & SSH)"
+    echo -e "  ${BOLD}1)${NC} Check Status"
+    echo -e "  ${BOLD}2)${NC} Install tmate"
+    echo -e "  ${BOLD}3)${NC} 🚀 Generate Instant Terminal Sharing Link (Web & SSH)"
+    echo -e "  ${BOLD}4)${NC} Launch Interactive tmate Session"
+    echo -e "  ${BOLD}5)${NC} Uninstall tmate"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "tmate" "tmate"
+        pause
+        ;;
+      2)
+        install_tmate
+        pause
+        ;;
+      3)
+        generate_tmate_session
+        pause
+        ;;
+      4)
+        if is_installed tmate; then
+          tmate
+        else
+          echo -e "\n${RED}tmate is not installed.${NC}"
+          pause
+        fi
+        ;;
+      5)
+        uninstall_tmate
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── Cockpit ───────────────────────────────────────────────────────────────────
+install_cockpit() {
+  need_root || return 1
+  echo ""
+  spinner_step "Updating package repositories..." 0.5
+  $SUDO apt-get update -y && $SUDO apt-get install -y cockpit
+  spinner_run "Enabling and starting Cockpit web socket..." $SUDO systemctl enable --now cockpit.socket
+  echo -e "\n${GREEN}Cockpit Web Console installed & activated!${NC}"
+  echo -e "Open in your browser: ${CYAN}https://$(get_ip_info):9090${NC}"
+  echo -e "${YELLOW}Note: Login with your server's Linux username and password.${NC}"
+}
+
+uninstall_cockpit() {
+  need_root || return 1
+  echo ""
+  spinner_run "Stopping Cockpit service and socket..." $SUDO systemctl stop cockpit.socket cockpit
+  $SUDO apt-get remove --purge -y cockpit cockpit-bridge cockpit-ws
+  $SUDO apt-get autoremove -y
+  echo -e "${GREEN}Cockpit removed.${NC}"
+}
+
+submenu_cockpit() {
+  while true; do
+    clear
+    print_banner
+    box_title "Cockpit (Web Server Manager & Terminal)"
+    echo -e "  ${BOLD}1)${NC} Status & Service Info"
+    echo -e "  ${BOLD}2)${NC} Install Cockpit Web Console"
+    echo -e "  ${BOLD}3)${NC} Restart Cockpit Service"
+    echo -e "  ${BOLD}4)${NC} Uninstall Cockpit"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "Cockpit" "cockpit-bridge" "cockpit.socket"
+        if command -v systemctl &>/dev/null && systemctl is-active cockpit.socket &>/dev/null; then
+          echo -e "\n  ${GREEN}🌐 Cockpit Web Dashboard & Terminal:${NC} https://$(get_ip_info):9090"
+        fi
+        pause
+        ;;
+      2)
+        install_cockpit
+        pause
+        ;;
+      3)
+        need_root || continue
+        spinner_run "Restarting Cockpit socket..." $SUDO systemctl restart cockpit.socket
+        pause
+        ;;
+      4)
+        uninstall_cockpit
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ── Starship Prompt ───────────────────────────────────────────────────────────
+install_starship() {
+  need_root || return 1
+  echo ""
+  spinner_step "Downloading Starship installer..." 0.8
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+
+  local bashrc_file="${HOME}/.bashrc"
+  if [[ -f "$bashrc_file" ]] && ! grep -q "starship init bash" "$bashrc_file"; then
+    echo 'eval "$(starship init bash)"' >> "$bashrc_file"
+    echo -e "${GREEN}Configured Starship in ${bashrc_file}!${NC}"
+  fi
+  echo -e "${GREEN}Starship installed! Run 'source ~/.bashrc' or restart shell to see your new prompt.${NC}"
+}
+
+uninstall_starship() {
+  need_root || return 1
+  echo ""
+  spinner_step "Removing Starship binary and shell hooks..." 0.4
+  $SUDO rm -f /usr/local/bin/starship
+  sed -i '/starship init bash/d' "${HOME}/.bashrc" 2>/dev/null || true
+  echo -e "${GREEN}Starship removed.${NC}"
+}
+
+submenu_starship() {
+  while true; do
+    clear
+    print_banner
+    box_title "Starship Prompt (Ultra-Fast Shell Aesthetics)"
+    echo -e "  ${BOLD}1)${NC} Status & Version"
+    echo -e "  ${BOLD}2)${NC} Install Starship Prompt"
+    echo -e "  ${BOLD}3)${NC} Starship Official Presets & Docs"
+    echo -e "  ${BOLD}4)${NC} Uninstall Starship"
+    echo ""
+    echo -e "  ${BOLD}0)${NC} Back"
+    hr
+    read -rp "Select an option: " c
+    case "$c" in
+      1)
+        show_pkg_status "Starship" "starship"
+        pause
+        ;;
+      2)
+        install_starship
+        pause
+        ;;
+      3)
+        echo -e "\n${CYAN}Starship Website & Presets:${NC} https://starship.rs"
+        pause
+        ;;
+      4)
+        uninstall_starship
+        pause
+        ;;
+      0) return ;;
+      *) echo -e "${RED}Invalid option${NC}"; sleep 1 ;;
+    esac
+  done
+}
+
+# ==============================================================================
+#  SECTION 4: DEVOPS, WEB & DATABASE STACK (Docker, Node.js, Nginx, MariaDB)
 # ==============================================================================
 menu_devops_stack() {
   while true; do
@@ -834,9 +1382,10 @@ menu_devops_stack() {
 # ── Docker ────────────────────────────────────────────────────────────────────
 install_docker() {
   need_root || return 1
-  echo -e "\n${CYAN}Installing Docker via official script (get.docker.com)...${NC}"
+  echo ""
+  spinner_step "Downloading Docker convenience installer..." 0.8
   curl -fsSL https://get.docker.com | sh
-  $SUDO systemctl enable --now docker
+  spinner_run "Enabling and starting Docker service..." $SUDO systemctl enable --now docker
   if [[ -n "${SUDO_USER:-}" ]]; then
     $SUDO usermod -aG docker "$SUDO_USER" 2>/dev/null || true
     echo -e "${YELLOW}Added user '$SUDO_USER' to docker group.${NC}"
@@ -849,7 +1398,9 @@ install_docker() {
 
 uninstall_docker() {
   need_root || return 1
-  echo -e "\n${CYAN}Removing Docker and Docker Compose packages...${NC}"
+  echo ""
+  spinner_run "Stopping Docker services..." $SUDO systemctl stop docker
+  echo -e "\n${CYAN}Removing Docker packages...${NC}"
   $SUDO apt-get remove --purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io || true
   $SUDO apt-get autoremove -y
   echo -e "${GREEN}Docker uninstalled.${NC}"
@@ -886,15 +1437,13 @@ submenu_docker() {
         ;;
       3)
         need_root || continue
-        $SUDO systemctl restart docker
-        echo -e "${GREEN}Docker service restarted.${NC}"
+        spinner_run "Restarting Docker service..." $SUDO systemctl restart docker
         pause
         ;;
       4)
         if is_installed docker; then
           need_root || continue
-          $SUDO docker system prune -af --volumes
-          echo -e "${GREEN}Docker system cleanup completed.${NC}"
+          spinner_run "Pruning Docker system images, containers, and volumes..." $SUDO docker system prune -af --volumes
         else
           echo -e "${RED}Docker is not installed.${NC}"
         fi
@@ -913,7 +1462,8 @@ submenu_docker() {
 # ── Node.js ───────────────────────────────────────────────────────────────────
 install_nodejs() {
   need_root || return 1
-  echo -e "\n${CYAN}Setting up NodeSource LTS repository...${NC}"
+  echo ""
+  spinner_step "Setting up NodeSource LTS repository..." 0.8
   curl -fsSL https://deb.nodesource.com/setup_lts.x | $SUDO -E bash -
   $SUDO apt-get install -y nodejs
   echo -e "${GREEN}Node.js and npm installed successfully!${NC}"
@@ -921,7 +1471,8 @@ install_nodejs() {
 
 uninstall_nodejs() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling Node.js...${NC}"
+  echo ""
+  spinner_step "Uninstalling Node.js and npm..." 0.5
   $SUDO apt-get remove --purge -y nodejs
   $SUDO rm -f /etc/apt/sources.list.d/nodesource.list
   echo -e "${GREEN}Node.js removed.${NC}"
@@ -959,6 +1510,7 @@ submenu_nodejs() {
       3)
         if is_installed npm; then
           need_root || continue
+          spinner_step "Upgrading npm to latest..." 0.8
           $SUDO npm install -g npm@latest
           echo -e "${GREEN}npm updated to $(npm -v).${NC}"
         else
@@ -969,6 +1521,7 @@ submenu_nodejs() {
       4)
         if is_installed npm; then
           need_root || continue
+          spinner_step "Installing PM2 process manager globally..." 1.0
           $SUDO npm install -g pm2
           echo -e "${GREEN}PM2 installed successfully!${NC}"
         else
@@ -989,17 +1542,18 @@ submenu_nodejs() {
 # ── Nginx & SSL ───────────────────────────────────────────────────────────────
 install_nginx() {
   need_root || return 1
-  echo -e "\n${CYAN}Installing Nginx, Certbot and python3-certbot-nginx...${NC}"
+  echo ""
+  spinner_step "Updating repository index..." 0.5
   $SUDO apt-get update -y
   $SUDO apt-get install -y nginx certbot python3-certbot-nginx
-  $SUDO systemctl enable --now nginx
+  spinner_run "Enabling and starting Nginx..." $SUDO systemctl enable --now nginx
   echo -e "${GREEN}Nginx and Certbot installed successfully!${NC}"
 }
 
 uninstall_nginx() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling Nginx and Certbot...${NC}"
-  $SUDO systemctl stop nginx 2>/dev/null || true
+  echo ""
+  spinner_run "Stopping Nginx service..." $SUDO systemctl stop nginx
   $SUDO apt-get remove --purge -y nginx nginx-common certbot python3-certbot-nginx
   $SUDO apt-get autoremove -y
   echo -e "${GREEN}Nginx uninstalled.${NC}"
@@ -1041,8 +1595,7 @@ submenu_nginx() {
       4)
         if is_installed nginx; then
           need_root || continue
-          $SUDO systemctl restart nginx
-          echo -e "${GREEN}Nginx restarted.${NC}"
+          spinner_run "Restarting Nginx service..." $SUDO systemctl restart nginx
         else
           echo -e "${RED}Nginx is not installed.${NC}"
         fi
@@ -1071,18 +1624,19 @@ submenu_nginx() {
 # ── MariaDB ───────────────────────────────────────────────────────────────────
 install_mariadb() {
   need_root || return 1
-  echo -e "\n${CYAN}Installing MariaDB Server...${NC}"
+  echo ""
+  spinner_step "Updating repository index..." 0.5
   $SUDO apt-get update -y
   $SUDO apt-get install -y mariadb-server mariadb-client
-  $SUDO systemctl enable --now mariadb
+  spinner_run "Starting MariaDB database service..." $SUDO systemctl enable --now mariadb
   echo -e "${GREEN}MariaDB installed successfully!${NC}"
   echo -e "${YELLOW}Tip: Run option 3 to secure your installation with 'mariadb-secure-installation'.${NC}"
 }
 
 uninstall_mariadb() {
   need_root || return 1
-  echo -e "\n${CYAN}Uninstalling MariaDB...${NC}"
-  $SUDO systemctl stop mariadb 2>/dev/null || true
+  echo ""
+  spinner_run "Stopping database daemon..." $SUDO systemctl stop mariadb
   $SUDO apt-get remove --purge -y mariadb-server mariadb-client
   $SUDO apt-get autoremove -y
   echo -e "${GREEN}MariaDB removed.${NC}"
@@ -1124,8 +1678,7 @@ submenu_mariadb() {
         ;;
       4)
         need_root || continue
-        $SUDO systemctl restart mariadb 2>/dev/null || $SUDO systemctl restart mysql 2>/dev/null
-        echo -e "${GREEN}Database service restarted.${NC}"
+        spinner_run "Restarting MariaDB service..." $SUDO systemctl restart mariadb
         pause
         ;;
       5)
@@ -1139,7 +1692,7 @@ submenu_mariadb() {
 }
 
 # ==============================================================================
-#  SECTION 4: SYSTEM INFO & MONITORING (Fastfetch, Btop, Htop, Neofetch)
+#  SECTION 5: SYSTEM INFO & MONITORING (Fastfetch, Btop, Htop, Neofetch)
 # ==============================================================================
 menu_monitoring() {
   while true; do
@@ -1181,7 +1734,8 @@ menu_monitoring() {
 
 install_fastfetch() {
   need_root || return 1
-  echo -e "\n${CYAN}Attempting to install fastfetch...${NC}"
+  echo ""
+  spinner_step "Querying repositories for fastfetch..." 0.5
   if $SUDO apt-get update -y && $SUDO apt-get install -y fastfetch; then
     echo -e "${GREEN}fastfetch installed successfully!${NC}"
     return 0
@@ -1240,6 +1794,7 @@ submenu_fastfetch() {
         ;;
       4)
         need_root || continue
+        spinner_step "Removing fastfetch..." 0.4
         $SUDO apt-get remove -y fastfetch
         echo -e "${GREEN}fastfetch removed.${NC}"
         pause
@@ -1292,6 +1847,7 @@ submenu_generic_tool() {
         ;;
       5)
         need_root || continue
+        spinner_step "Removing $name..." 0.4
         $SUDO apt-get remove -y "$pkg"
         echo -e "${GREEN}$name uninstalled.${NC}"
         pause
@@ -1303,7 +1859,7 @@ submenu_generic_tool() {
 }
 
 # ==============================================================================
-#  SECTION 5: SYSTEM TOOLS & MAINTENANCE
+#  SECTION 6: SYSTEM TOOLS & MAINTENANCE
 # ==============================================================================
 menu_maintenance() {
   while true; do
@@ -1313,7 +1869,7 @@ menu_maintenance() {
     echo -e "  ${BOLD}${CYAN}1)${NC} 📦 Install Essential Tools (curl, wget, git, jq, tmux, ufw, etc.)"
     echo -e "  ${BOLD}${CYAN}2)${NC} 🚀 Full System Upgrade (apt update & upgrade)"
     echo -e "  ${BOLD}${CYAN}3)${NC} 🧹 Clean Cache & Free Disk Space (apt, journal, docker)"
-    echo -e "  ${BOLD}${CYAN}4)${NC} 🛡️  Quick Firewall Setup (UFW Enable & Open SSH 22)"
+    echo -e "  ${BOLD}${CYAN}4)${NC} 🛡️  Quick Firewall Setup (UFW Enable & Open Ports)"
     echo ""
     echo -e "  ${BOLD}${WHITE}0)${NC} ⬅ Back to Main Menu"
     hr
@@ -1337,29 +1893,31 @@ menu_maintenance() {
         ;;
       3)
         need_root || continue
-        echo -e "\n${CYAN}Cleaning package caches and system logs...${NC}"
-        $SUDO apt-get clean -y
-        $SUDO apt-get autoclean -y
+        echo ""
+        spinner_run "Cleaning APT package archive caches..." $SUDO apt-get clean -y
+        spinner_run "Removing obsolete downloaded archives..." $SUDO apt-get autoclean -y
         if command -v journalctl &>/dev/null; then
-          $SUDO journalctl --vacuum-time=3d 2>/dev/null || true
+          spinner_run "Trimming systemd journal logs to last 3 days..." $SUDO journalctl --vacuum-time=3d
         fi
         if is_installed docker; then
-          echo -e "${YELLOW}Pruning dangling Docker resources...${NC}"
-          $SUDO docker system prune -f 2>/dev/null || true
+          spinner_run "Pruning dangling Docker resources..." $SUDO docker system prune -f
         fi
-        echo -e "${GREEN}Cleanup finished! Current disk usage:${NC}"
+        echo -e "\n${GREEN}Cleanup finished! Current disk space:${NC}"
         df -h / | tail -n 1
         pause
         ;;
       4)
         need_root || continue
-        echo -e "\n${YELLOW}Configuring UFW firewall...${NC}"
+        echo ""
+        spinner_step "Configuring UFW rules..." 0.4
         $SUDO ufw allow 22/tcp
         $SUDO ufw allow 80/tcp
         $SUDO ufw allow 443/tcp
-        $SUDO ufw --force enable
+        $SUDO ufw allow 7681/tcp
+        $SUDO ufw allow 9090/tcp
+        spinner_run "Activating UFW firewall..." $SUDO ufw --force enable
         $SUDO ufw status verbose
-        echo -e "\n${GREEN}UFW configured with ports 22, 80, and 443 allowed.${NC}"
+        echo -e "\n${GREEN}UFW active with ports 22, 80, 443, 7681, and 9090 allowed.${NC}"
         pause
         ;;
       0) return ;;
@@ -1372,36 +1930,38 @@ menu_maintenance() {
 #  MAIN DASHBOARD
 # ==============================================================================
 main_menu() {
-  # Trap SIGINT to ensure clean exit
-  trap 'echo -e "\n\n${CYAN}Exiting PRC Gaming Code Hub. Goodbye!${NC}"; exit 0' INT
+  # Run animated splash screen on initial startup
+  splash_screen
 
   while true; do
     clear
     print_banner
 
     echo -e "${BOLD}${WHITE}  SELECT A CATEGORY:${NC}\n"
-    echo -e "  ${BOLD}${CYAN}1)${NC} 🎮  Game & Hosting Panels      ${GRAY}(Pterodactyl, Pelican, Puffer, Skyport, JTG)${NC}"
-    echo -e "  ${BOLD}${CYAN}2)${NC} 🌐  Tunneling & Remote Access   ${GRAY}(Cloudflare Tunnel, Playit.gg, Tailscale)${NC}"
-    echo -e "  ${BOLD}${CYAN}3)${NC} 🐳  DevOps, Web & Database     ${GRAY}(Docker, Node.js, Nginx, MariaDB)${NC}"
-    echo -e "  ${BOLD}${CYAN}4)${NC} 📊  Monitoring & System Info    ${GRAY}(Fastfetch, Btop, Htop, Neofetch)${NC}"
-    echo -e "  ${BOLD}${CYAN}5)${NC} 🛠️   System Tools & Maintenance  ${GRAY}(1-Click Essentials, Upgrades, Clean)${NC}"
+    echo -e "  ${BOLD}${CYAN}1)${NC} 🎮  Game & Hosting Panels        ${GRAY}(Pterodactyl, Pelican, Puffer, Skyport, JTG)${NC}"
+    echo -e "  ${BOLD}${CYAN}2)${NC} 🌐  Tunneling & Remote Access     ${GRAY}(Cloudflare Tunnel, Playit.gg, Tailscale)${NC}"
+    echo -e "  ${BOLD}${CYAN}3)${NC} 🖥️   Web Terminals & Remote Access ${GRAY}(ttyd, tmate, Cockpit, Starship)${NC}"
+    echo -e "  ${BOLD}${CYAN}4)${NC} 🐳  DevOps, Web & Database       ${GRAY}(Docker, Node.js, Nginx, MariaDB)${NC}"
+    echo -e "  ${BOLD}${CYAN}5)${NC} 📊  Monitoring & System Info      ${GRAY}(Fastfetch, Btop, Htop, Neofetch)${NC}"
+    echo -e "  ${BOLD}${CYAN}6)${NC} 🛠️   System Tools & Maintenance    ${GRAY}(1-Click Essentials, Upgrades, Clean)${NC}"
     echo ""
     echo -e "  ${BOLD}${RED}0)${NC} 🚪  Exit"
     hr
-    read -rp "$(echo -e "${BOLD}Enter choice [0-5]: ${NC}")" sel
+    read -rp "$(echo -e "${BOLD}Enter choice [0-6]: ${NC}")" sel
 
     case "$sel" in
       1) menu_game_panels ;;
       2) menu_tunnels ;;
-      3) menu_devops_stack ;;
-      4) menu_monitoring ;;
-      5) menu_maintenance ;;
+      3) menu_terminals ;;
+      4) menu_devops_stack ;;
+      5) menu_monitoring ;;
+      6) menu_maintenance ;;
       0)
         echo -e "\n${CYAN}Thank you for using PRC GAMING CODE HUB! Happy hosting! 🚀${NC}\n"
         exit 0
         ;;
       *)
-        echo -e "${RED}Invalid option. Please choose between 0 and 5.${NC}"
+        echo -e "${RED}Invalid option. Please choose between 0 and 6.${NC}"
         sleep 1
         ;;
     esac
